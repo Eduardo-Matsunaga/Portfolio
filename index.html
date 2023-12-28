@@ -1,117 +1,489 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portfolio</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>Jon Carter UI/UX Designer</title>
+    <link rel="stylesheet" href="./assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="./assets/css/aos.css">
+    <link rel="stylesheet" href="./assets/css/line-awesome.min.css">
+    <link rel="stylesheet" href="./assets/css/style.css">
 </head>
-<body>
-    <header>
-        
-        <img src="logo.PNG" alt="logo do Portifolio">
-        <nav>
-            <ul class="navegacao">
-                <li><a href="#Home">Home</a></li>
-                <li><a href="#sobre" >Sobre Mim</a></li>
-                <li><a href="#projetos">Meus Projetos</a></li>
-                <li><a href="#contato">Contato</a></li>
-            </ul>
-            <i class="fa-solid fa-bars"></i>
-        </nav>
-        
-    </header>
-    <section class="section-div" id="Home">
-        <div>
-            <h2 class="digitando">Hello World !!!</h2>
-            <p>Olá muito prazer, esse sou eu, com meus 18 anos, sempre muito próximo a tecnologias, utilizando-as, sempre acompanhando notícias etc  e também o momento em que descobri a programação, enfim, seja bem vindo ao meu Portfolio.</p>
-            <a href="https://drive.google.com/uc?export=download&id=12E-JKra2kppYWt4Zpw8IF4xFvJyehXyv" download>Download CV</a>
 
+<body data-bs-spy="scroll" data-bs-target=".navbar">
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container flex-lg-column">
+            <a class="navbar-brand mx-lg-auto mb-lg-4" href="#">
+                <span class="h3 fw-bold d-block d-lg-none">Eduardo Matsunaga</span>
+                <img src="./assets/images/person.PNG" class="d-none d-lg-block rounded-circle" alt="">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto flex-lg-column text-lg-center">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">Sobre</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#reviews">Skills</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#blog">Meus Projetos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">Contato</a>
+                    </li>
+
+                </ul>
+            </div>
         </div>
-        <img src="foto1.jpg" alt="ilustrativa imagem de uma pessoa">
-    </section>
-    <main>
-        <article class="sobre" id="sobre">
-            <div class="sobre-titulo">
-                <h1>Sobre mim</h1>
-                <p>Um pouco sobre minha pessoa</p>
-                <div>
-                    <span></span>
-                    <span></span>
-                    <span></span>
+    </nav>
+    <!-- //NAVBAR -->
+
+    <!-- CONTENT WRAPPER -->
+    <div id="content-wrapper">
+
+        <!-- HOME -->
+        <section id="home" class="full-height px-lg-5">
+
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-10">
+                        <h1 class="display-4 fw-bold" data-aos="fade-up">Desbravando o Universo da <span class="text-brand">T.I</span> com Aprendizado e Paixão</h1>
+                        <p class="lead mt-2 mb-4" data-aos="fade-up" data-aos-delay="300">Olá eu sou Eduardo Matsunaga apaixonado por Tecnologia da Informação (T.I.), sou um entusiasta que busca constantemente aprender e evoluir. Possuo fluência em inglês e desenvolvi habilidades intermediárias em HTML, CSS, JS, PHP, Java e Banco de Dados, conquistadas por meio de cursos online e matérias na Unicesumar.
+                        </p>
+                        <div data-aos="fade-up" data-aos-delay="600">
+                            <a href="https://drive.google.com/uc?export=download&id=12E-JKra2kppYWt4Zpw8IF4xFvJyehXyv" target="_blank" class="btn btn-brand me-3">Baixar CV</a>
+                            <a href="https://wa.me/+5541998504347" class="link-custom" target="_blank">Whatsapp: (41) 9 9850-4347</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+        <!-- //HOME -->
+
+         <!-- ABOUT -->
+        <section id="about" class="full-height px-lg-5">
+            <div class="container">
+
+                <div class="row pb-4" data-aos="fade-up">
+                    <div class="col-lg-8">
+                        <h6 class="text-brand">SOBRE</h6>
+                        <h1>Minha Educação</h1>
+                    </div>
+                </div>
+
+                <div class="row gy-5">
+                    <div class="col-lg-6">
+
+                        
+                        <div class="row gy-4">
+
+                            <div class="col-12" data-aos="fade-up" data-aos-delay="600">
+                                <div class="bg-base p-4 rounded-4 shadow-effect">
+                                    <h4>Curso Superior de Análise e Desenvolvimento de Sistemas</h4>
+                                    <p class="text-brand mb-2">Unicesumar (2022 - Até o momento)</p>
+                                    <p class="mb-0">Ao se formar em Análise e Desenvolvimento de Sistemas, você poderá ser responsável por analisar, projetar, documentar, especificar, testar, implantar e manter sistemas computacionais de informação, atuando de forma profissional. </p>
+                                </div>
+                            </div>
+
+                            <div class="col-12" data-aos="fade-up" data-aos-delay="600">
+                                <div class="bg-base p-4 rounded-4 shadow-effect">
+                                    <h4>Effective communication ADVANCED STAGE</h4>
+                                    <p class="text-brand mb-2">CCAA (Set/2013 - Nov/2017)</p>
+                                    <p class="mb-0">Alcancei um estágio avançado em comunicação eficaz, atestando minhas habilidades aprimoradas de expressão verbal e escrita. Obtive reconhecimento por meio do certificado da CCAA.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="col-12" data-aos="fade-up" data-aos-delay="600">
+                                <div class="bg-base p-4 rounded-4 shadow-effect">
+                                    <h4>MTA: Introduction to Programming Using Java</h4>
+                                    <p class="text-brand mb-2">Certificado Cursos Online 60 horas (06/03/2023 - 20/03/2020)</p>
+                                    <p class="mb-0">O curso abrange conceitos básicos de programação, estruturas de controle de fluxo, manipulação de dados e introdução aos princípios da programação orientada a objetos.</p>
+                                </div>
+                            </div>
+
+                            <div class="col-12" data-aos="fade-up" data-aos-delay="600">
+                                <div class="bg-base p-4 rounded-4 shadow-effect">
+                                    <h4>HTML5 Básico</h4>
+                                    <p class="text-brand mb-2">Unova Cursos 40 horas (27/03/2023 - 13/04/2020)</p>
+                                    <p class="mb-0"> fundamentos do HTML5, desde a estrutura básica de uma página web até elementos mais avançados, técnicas de formatação, habilidades práticas, criar páginas web interativas e compreender como HTML5 se integra com outras tecnologias web.</p>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-lg-6">
+
+                        
+                        <div class="row gy-4">
+
+                            <div class="col-12" data-aos="fade-up" data-aos-delay="600">
+                                <div class="bg-base p-4 rounded-4 shadow-effect">
+                                    <h4>EHE- Ethical Hacking Essentials</h4>
+                                    <p class="text-brand mb-2">Acadi-TI - Academia Inovadora de TI (26/11/2023 - 22/12/2023)</p>
+                                    <p class="mb-0">All we are more and design lorem ipsum dolor creativity sit amet consectetur adipisicing elit</p>
+                                </div>
+                            </div>
+
+                            <div class="col-12" data-aos="fade-up" data-aos-delay="600">
+                                <div class="bg-base p-4 rounded-4 shadow-effect">
+                                    <h4>Cibersegurança: Anatomia Clássica de um Ciberataque</h4>
+                                    <p class="text-brand mb-2">FGV Online (01/12/2023 - 23/12/2023)</p>
+                                    <p class="mb-0">Obtive um maior entendimento sobre como as empresas enxergam a área de TI, incluindo conceitos como maturidade e transformação digital. Além disso, adquiri conhecimentos sobre a anatomia clássica de um CiberAtaque.</p>
+                                </div>
+                            </div>
+
+                            <div class="col-12" data-aos="fade-up" data-aos-delay="600">
+                                <div class="bg-base p-4 rounded-4 shadow-effect">
+                                    <h4>Introdução ao JAVASCRIPT</h4>
+                                    <p class="text-brand mb-2">Fundação Bradesco Escola Virtual (02/10/2023 - 13/10/2023)</p>
+                                    <p class="mb-0">Conceitos essenciais, desde variáveis e estruturas de controle até manipulação do DOM e interações com o usuário. </p>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+        <!-- //ABOUT -->
+
+        <!-- SKILLS -->
+        <section id="reviews" class="full-height px-lg-5">
+            <div class="container">
+
+                <div class="row pb-4" data-aos="fade-up">
+                    <div class="col-lg-8">
+                        <h6 class="text-brand">SKILLS</h6>
+                        <h1>Um pouco das minhas habilidades</h1>
+                    </div>
                 </div>
                
-            </div>
-            <img src="foto2.jpg" alt="imagem de uma pessoa ilustrativa">
-            
-            <div class="sobre-conteudo">
-                <div class="sobre-texto">
-                    <h1>Eu sou Eduardo Matsunaga </h1>
-                    <p>Meu nome é Eduardo Borges Matsunaga graduando no curso de Análise e Desenvolvimento de Sistemas pela Universidade Cesumar, me considero uma pessoa comunicativa e extrovertida, com a habilidade bem desenvolvida de trabalhar em grupo.<br> Atualmente a procura de oportunidades no mercado de trabalho como DEV JR/Estágio, sempre praticando o aprendizado contínuo pois meu objetivo é me tornar um desenvolvedor Full Stack. Tenho conhecimentos básicos nas linguagens C, C++, HTML, CSS, Java e no momento estudando Java Script.</p>
+
+                <div class="row gy-2">
+
+                    <div class="col-md-6" data-aos="fade-up">
+
+                        <div class="review shadow-effect bg-base p-4 rounded-4 grid-container">
+                            <div class="text-brand h5 mb-3">
+                                <h5 class="mb-0">HTML5, CSS</h5>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                </div>
+
+                            <div class="text-brand h5 mb-3">
+                                <h5 class="mb-0">JavaScript</h5>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                            </div>
+                          
+                            <div class="text-brand h5 mb-3 ">
+                                <h5 class="mb-0">Banco de Dados MySQL/T-SQL</h5>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star-half"></i>
+                            </div>
+
+                            <div class="text-brand h5 mb-3 ">
+                                <h5 class="mb-0">Java</h5>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                            </div>
+
+                            <div class="text-brand h5 mb-3 ">
+                                <h5 class="mb-0">Linux</h5>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star-half"></i>
+                            </div>
+
+                            <div class="text-brand h5 mb-3 ">
+                                <h5 class="mb-0">PHP</h5>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star-half"></i>
+                            </div>
+
+                            <div class="text-brand h5 mb-3 ">
+                                <h5 class="mb-0">Logica de Programação</h5>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star-half"></i>
+                            </div>
+
+                            <div class="text-brand h5 mb-3 ">
+                                <h5 class="mb-0">Resolução de Problemas</h5>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                            </div>
+
+                            <div class="text-brand h5 mb-3 ">
+                                <h5 class="mb-0">Trabalho em equipe</h5>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                            </div>
+
+                            <div class="text-brand h5 mb-3 ">
+                                <h5 class="mb-0">Flexibilidade</h5>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                                <i class="las la-star"></i>
+                            </div>
+                            </div>
+                    </div>
                 </div>
-                <div class="sobre-info">
-                    <p><i class="fa-solid fa-calendar-days"></i>Data de Aniversário: 24 aug 2001</p>
-                    <p><i class="fa-solid fa-location-dot"></i>Endereço: Curitiba, Fanny, Brasil</p>
-                    <p><i class="fa-sharp fa-solid fa-globe"></i>Línguas: Português, Inglês</p>
-                    <p><i class="fa-solid fa-flag"></i>Nacionalidade: Brasileira</p>
-                    <p><i class="fa-solid fa-phone-volume"></i>Número:(+55) 41 99850-4347 </p>
-                    <p><i class="fa-solid fa-envelope"></i>Email: eduardoborgesmatsunaga@gmail.com</p>
+            </div>
+        </section>
+        <!-- //SKILLS -->
+
+        <!-- PROJETOS -->
+        <section id="blog" class="full-height px-lg-5">
+            <div class="container">
+
+                <div class="row pb-4" data-aos="fade-up">
+                    <div class="col-lg-8">
+                        <h6 class="text-brand">PROJETOS</h6>
+                        <h1>Meus Projetos</h1>
+                    </div>
+                </div>
+
+                <div class="row gy-4">
+
+                    <div class="col-md-4" data-aos="fade-up">
+                        <div class="card-custom rounded-4 bg-base shadow-effect">
+                            <div class="card-custom-image rounded-4">
+                                <img class="rounded-4" src="./assets/images/blog-post-1.png" alt="">
+                            </div>
+                                <div class="card-custom-content p-4">
+                                    <p class="mb-4">Meu primeiro website desenvolvido junto ao curso da UNOVA cursos Online um site simples, porém abordando elementos básicos do HTML5, confira no GitHub.
+                                    </p>
+                                    <a href="https://github.com/Eduardo-Matsunaga/1-website-HTML5-CSS" target="_blank" class="link-custom">Git Link</a>                                          
+                                </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                        <div class="card-custom rounded-4 bg-base shadow-effect">
+                            <div class="card-custom-image rounded-4">
+                                <img class="rounded-4" src="./assets/images/blog-post-2.jpg" alt="">
+                            </div>
+                            <div class="card-custom-content p-4">
+                                <p class="mb-4">Segundo site desenvolvido com apoio da UNOVA cursos Online, agora abordando mais elementos sobre HTML5, CSS e agora um pouco de JavaScript. Confira no GitHub.
+                                </p>
+                                <a href="https://github.com/Eduardo-Matsunaga/2-website-HTML5-CSS-JS" target="_blank" class="link-custom">Git Link</a>
+                               
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4" data-aos="fade-up" data-aos-delay="600">
+                        <div class="card-custom rounded-4 bg-base shadow-effect">
+                            <div class="card-custom-image rounded-4">
+                                <img class="rounded-4" src="./assets/images/blog-post-3.PNG" alt="">
+                            </div>
+                            <div class="card-custom-content p-4">
+                                <p class="mb-4">Por fim o terceiro site da UNOVA cursos online focando mais na parte da estática com CSS e HTML5. Confira no GitHub.
+                                </p>
+                                <a href="https://github.com/Eduardo-Matsunaga/3-website-" target="_blank" class="link-custom">Git Link</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4" data-aos="fade-up" data-aos-delay="600">
+                        <div class="card-custom rounded-4 bg-base shadow-effect">
+                            <div class="card-custom-image rounded-4">
+                                <img class="rounded-4" src="./assets/images/blog-post-4.PNG" alt="">
+                            </div>
+                            <div class="card-custom-content p-4">
+                                <p class="mb-4">Portfolio moderno desenvolvido com objetivo de aprimorar habilidades em HTML5,CSS e JavaScript porém a responsividade do site deixa a desejar. Confira no GitHub.
+                                </p>
+                                <a href="https://github.com/Eduardo-Matsunaga/Portfolio" target="_blank" class="link-custom">Git Link</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4" data-aos="fade-up" data-aos-delay="600">
+                        <div class="card-custom rounded-4 bg-base shadow-effect">
+                            <div class="card-custom-image rounded-4">
+                                <img class="rounded-4" src="./assets/images/blog-post-5.PNG" alt="">
+                            </div>
+                            <div class="card-custom-content p-4">
+                                <p class="mb-4">Formulário CRUD totalmente funcional em PHP com recursos do xamp. Confira no GitHub.
+                                </p>
+                                <a href="https://github.com/Eduardo-Matsunaga/SignoTech-formulario" target="_blank" class="link-custom">Git Link</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4" data-aos="fade-up" data-aos-delay="600">
+                        <div class="card-custom rounded-4 bg-base shadow-effect">
+                            <div class="card-custom-image rounded-4">
+                                <img class="rounded-4" src="./assets/images/blog-post-6.PNG" alt="">
+                            </div>
+                            <div class="card-custom-content p-4">
+                                <p class="mb-4">Meu primeiro CTF (mrrobot) no tryhackme. Confira o documento  passo a passo da minha experiência. 
+                                </p>
+                                <a href="https://drive.google.com/file/d/1tW3cHfCQQU3sfB_JX1c_-SrqfAefCAqj/view?usp=sharing" target="_blank" class="link-custom">Preview</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4" data-aos="fade-up" data-aos-delay="600">
+                        <div class="card-custom rounded-4 bg-base shadow-effect">
+                            <div class="card-custom-image rounded-4">
+                                <img class="rounded-4" src="./assets/images/blog-post-7.PNG" alt="">
+                            </div>
+                            <div class="card-custom-content p-4">
+                                <p class="mb-4">Durante o curso da acadi-TI EHE- Ethical Hacking Essentials fiz anotações sobre os 12  módulos. Confira o PDF completo.
+                                </p>
+                                <a href="https://drive.google.com/file/d/1eq31pI5dKxBUhnr4OTuvrEff8JjYOQTe/view?usp=sharing" target="_blank" class="link-custom">Preview</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4" data-aos="fade-up" data-aos-delay="600">
+                        <div class="card-custom rounded-4 bg-base shadow-effect">
+                            <div class="card-custom-image rounded-4">
+                                <img class="rounded-4" src="./assets/images/blog-post-8.PNG" alt="">
+                            </div>
+                            <div class="card-custom-content p-4">
+                                <p class="mb-4">CFT (pickleRick) no tryhackme. Confira o passo a passo que realizei.
+                                </p>
+                                <a href="https://drive.google.com/file/d/1UgQTIpBuM_I6dHJHcPas11YgZV5j-itp/view?usp=sharing" target="_blank" class="link-custom">Preview</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4" data-aos="fade-up" data-aos-delay="600">
+                        <div class="card-custom rounded-4 bg-base shadow-effect">
+                            <div class="card-custom-image rounded-4">
+                                <img class="rounded-4" src="./assets/images/blog-post-9.PNG" alt="">
+                            </div>
+                            <div class="card-custom-content p-4">
+                                <p class="mb-4">CTF (simpleCTF) no tryhackme. Confira o passo a passo eu realizei.
+                                </p>
+                                <a href="https://drive.google.com/file/d/1QH3QZ3ccE_FH8AEnKhGogzkNHr2Xa3ix/view?usp=sharing" target="_blank" class="link-custom">Preview</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4" data-aos="fade-up" data-aos-delay="600">
+                        <div class="card-custom rounded-4 bg-base shadow-effect">
+                            <div class="card-custom-image rounded-4">
+                                <img class="rounded-4" src="./assets/images/blog-post-10.PNG" alt="">
+                            </div>
+                            <div class="card-custom-content p-4">
+                                <p class="mb-4">Pesquisa de Mercado em relação a funerárias para Pets em curitiba/PR realizada para fins acadêmicos. Confira o PDF completo.
+                                </p>
+                                <a href="https://drive.google.com/file/d/1WIwFS9asrukxXHeF8d1DEdguiWejeLDz/view?usp=sharing" target="_blank" class="link-custom">Preview</a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+        <!-- //PROJETOS -->
+
+        <!-- CONTACT -->
+        <section id="contact" class="full-height px-lg-5">
+            <div class="container">
+
+                <div class="row justify-content-center text-center">
+                    <div class="col-lg-8 pb-4" data-aos="fade-up">
+                        <h6 class="text-brand">CONTATO</h6>
+                        <h1>Interessado em me contatar? Vamos conversar!
+                        </h1>
+                    </div>
+                  
+
+                    <div class="col-lg-8 pb-4 mt-4" data-aos="fade-up">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-telephone" viewBox="0 0 16 16">
+                            
+                        <path d="M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.568 17.568 0 0 0 4.168 6.608 17.569 17.569 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l1.034-1.034a.678.678 0 0 0-.063-1.015l-2.307-1.794a.678.678 0 0 0-.58-.122l-2.19.547a1.745 1.745 0 0 1-1.657-.459L5.482 8.062a1.745 1.745 0 0 1-.46-1.657l.548-2.19a.678.678 0 0 0-.122-.58L3.654 1.328zM1.884.511a1.745 1.745 0 0 1 2.612.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.678.678 0 0 0 .178.643l2.457 2.457a.678.678 0 0 0 .644.178l2.189-.547a1.745 1.745 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.634 18.634 0 0 1-7.01-4.42 18.634 18.634 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877L1.885.511z"/>
+                          </svg>
+                        <h6 class="text-brand mt-3 mb-5">+55 41 99850-4347</h6>
+
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-envelope" viewBox="0 0 16 16">
+                            <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+                          </svg>
+                        <h6 class="text-brand mt-3">eduardoborgesmatsunaga@gmail.com</h6>
+                    </div>
+
+                    
+                </div>
+
+
+            </div>
+        </section>
+        <!-- //CONTACT -->
+
+        <!-- FOOTER -->
+        <footer class="py-5 px-lg-5">
+            <div class="container">
+                <div class="row gy-4 justify-content-between">
+                    <div class="col-auto">
+                        <p class="mb-0">Todos direitos reservados <a href="#" class="fw-bold">Eduardo Matsunaga © - 2023</a></p>
+                    </div>
+                    <div class="col-auto">
+                        <div class="social-icons">
+                            <a href="https://www.linkedin.com/in/eduardo-matsunaga-2a11191b3/"><i class="lab la-linkedin-in"></i></a>
+                            <a href="https://www.instagram.com/eduardo.matsunaga/"><i class="lab la-instagram"></i></a>
+                            <a href="https://www.facebook.com/eduardo.borgesmatsunaga"><i class="lab la-facebook-f"></i></a>
+                            <a href="https://github.com/Eduardo-Matsunaga"><i class="lab la-github"></i></a>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </article>
-    </main>
+        </footer>
+        <!-- //FOOTER -->
 
-    <section class="projetos" id="projetos">
-        <div class="sobre-titulo">
-            <h1>Meus Projetos</h1>
-            <div>
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        <div class="projetos-fotos">
-            <ul>
-                <li><a href="https://github.com/Eduardo-Matsunaga/1-website-HTML5-CSS" target="_blank"><img src="first-website.png" alt="Primeiro site em html e css"></a> </li>
-                <li><a href="https://github.com/Eduardo-Matsunaga/2-website-HTML5-CSS-JS" target="_blank"><img src="second-website.png" alt="Evolução no segundo site em html e css"></a></li>
-                <li><a href="https://github.com/Eduardo-Matsunaga/3-website-" target="_blank"><img src="thirdy-website.png" alt="Terceiro site em html e css"></a></li>
-                <li><a href="#"><img src="port.avif"alt="Portifolio feito em html, css e JavaScript"></a></li>
-            </ul>
-        </div>
-        <a class="git" href="https://github.com/Eduardo-Matsunaga" target="_blank">Perfil GitHub</a>
-    </section>
-
-    <section class="contato" id="contato">
-        <h2>Fale Comigo!</h2>
-        <ul>
-            <li>
-                <i class="fas fa-envelope"></i>
-                <a href="mailto:eduardoborgesmatsunaga@gmail.com">eduardoborgesmatsunaga@gmail.com</a>
-            </li>
-            <li>
-                <i class="fas fa-phone"></i>
-                <a href="tel:+5541998504347">(+55) 41 998504347</a>
-            </li>
-        </ul>
-    </section>
+    </div>
+    <!-- //CONTENT WRAPPER -->
 
 
-    <footer>
-        <nav>
-            <ul class="footer-sociais">
-                <li><a href="https://www.facebook.com/eduardo.borgesmatsunaga/" target="_blank"><i class="fab fa-facebook-f"></i></a></li>
-                <li><a href="https://www.linkedin.com/in/lactus-lake-2a11191b3/" target="_blank"><i class="fab fa-linkedin-in"></i></a></li>
-                <li><a href="https://www.instagram.com/japacwb1/" target="_blank"><i class="fab fa-instagram"></i></a></li>
-                <li><a href="https://github.com/Eduardo-Matsunaga" target="_blank"><i class="fab fa-github-alt"></i></a></li>
-              </ul>
-              
-            <p class="footer-comercial">Todos direitos reservados - Eduardo Matsunaga &copy; - 2023</p>
-        </nav>
 
-    </footer>
-
-    <script src="script.js"></script>
+    <script src="./assets/js/bootstrap.bundle.min.js"></script>
+    <script src="./assets/js/aos.js"></script>
+    <script src="./assets/js/main.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
+
 </html>
