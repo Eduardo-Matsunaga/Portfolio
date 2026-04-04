@@ -26,11 +26,11 @@ window.addEventListener('scroll', () =>
 );
 
 /* ── HERO ENTRANCE ── */
-gsap.from('.hero-tag',      { opacity: 0, y: 30,  duration: 1,   delay: .3,  ease: 'power3.out' });
-gsap.from('.hero-title',    { opacity: 0, y: 50,  duration: 1.1, delay: .5,  ease: 'power3.out' });
-gsap.from('.hero-desc',     { opacity: 0, y: 30,  duration: 1,   delay: .75, ease: 'power3.out' });
-gsap.from('.hero-actions',  { opacity: 0, y: 20,  duration: .8,  delay: 1,   ease: 'power3.out' });
-gsap.from('.hero-img-frame',{ opacity: 0, x: 60,  duration: 1.2, delay: .6,  ease: 'power3.out' });
+gsap.from('.hero-tag',      { opacity: 0, y: 30,  duration: 1,   delay: 1.9,  ease: 'power3.out' });
+gsap.from('.hero-title',    { opacity: 0, y: 50,  duration: 1.1, delay: 1.9,  ease: 'power3.out' });
+gsap.from('.hero-desc',     { opacity: 0, y: 30,  duration: 1,   delay: 1.9, ease: 'power3.out' });
+gsap.from('.hero-actions',  { opacity: 0, y: 20,  duration: .8,  delay: 1.9,   ease: 'power3.out' });
+gsap.from('.hero-img-frame',{ opacity: 0, x: 60,  duration: 1.2, delay: 1.9,  ease: 'power3.out' });
 
 /* ── SCROLL REVEALS ── */
 gsap.utils.toArray('.reveal').forEach(el => {
@@ -92,3 +92,63 @@ window.addEventListener('load', () => {
     counter.textContent = String(Math.floor(progress)).padStart(3, '0');
   }, 60);
 });
+
+// ── HERO AURORA BG ──
+(function() {
+  const canvas = document.getElementById('hero-canvas');
+  const ctx = canvas.getContext('2d');
+  const bgg = document.getElementById('hero-bg-glow');
+  const section = document.getElementById('home');
+
+  let w, h, dots = [], hue = 230;
+  const md = 100, maxWidth = 15, minWidth = 2, hueDif = 50, glow = 10;
+  const maxSpeed = 35, minSpeed = 6;
+
+  function resize() {
+    w = canvas.width = section.offsetWidth;
+    h = canvas.height = section.getBoundingClientRect().height || window.innerHeight;
+    dots = [];
+    pushDots();
+    ctx.globalCompositeOperation = 'lighter';
+  }
+
+  function pushDots() {
+    for (let i = 1; i < md; i++) {
+      dots.push({
+        x: Math.random() * w,
+        y: Math.random() * h / 2,
+        h: Math.random() * (h * .9 - h * .5) + h * .5,
+        w: Math.random() * (maxWidth - minWidth) + minWidth,
+        c: Math.random() * (hueDif * 2) + (hue - hueDif),
+        m: Math.random() * (maxSpeed - minSpeed) + minSpeed
+      });
+    }
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, w, h);
+    for (let i = 0; i < dots.length; i++) {
+      const d = dots[i];
+      ctx.beginPath();
+      const grd = ctx.createLinearGradient(d.x, d.y, d.x + d.w, d.y + d.h);
+      grd.addColorStop(0,  `hsla(${d.c},50%,50%,0)`);
+      grd.addColorStop(.2, `hsla(${d.c+20},50%,50%,.5)`);
+      grd.addColorStop(.5, `hsla(${d.c+50},70%,60%,.8)`);
+      grd.addColorStop(.8, `hsla(${d.c+80},50%,50%,.5)`);
+      grd.addColorStop(1,  `hsla(${d.c+100},50%,50%,0)`);
+      ctx.shadowBlur = glow;
+      ctx.shadowColor = `hsla(${d.c},50%,50%,1)`;
+      ctx.fillStyle = grd;
+      ctx.fillRect(d.x, d.y, d.w, d.h);
+      ctx.closePath();
+      d.x += d.m / 100;
+      if (d.x > w + maxWidth) d.x = -maxWidth;
+    }
+    requestAnimationFrame(render);
+  }
+
+  bgg.style.background = `radial-gradient(ellipse at center, hsla(${hue},50%,50%,.8) 0%,rgba(0,0,0,0) 100%)`;
+  resize();
+  render();
+  window.addEventListener('resize', resize);
+})();
