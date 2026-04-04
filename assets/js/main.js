@@ -1,40 +1,8 @@
 gsap.registerPlugin(ScrollTrigger);
 
-/* MARQUEE */
-(() => {
-  const strip = document.querySelector('.marquee-strip');
-  const inner = document.querySelector('.marquee-inner');
-  const source = inner?.querySelector('[data-marquee-source="true"]');
-  if (!strip || !inner || !source) {
-    return;
-  }
-
-  function setupMarquee() {
-    inner.querySelectorAll('.marquee-group[data-marquee-clone="true"]').forEach((node) => node.remove());
-
-    const sourceWidth = source.getBoundingClientRect().width;
-    if (!sourceWidth) {
-      return;
-    }
-
-    inner.style.setProperty('--marquee-step', `${sourceWidth}px`);
-
-    const minTrackWidth = strip.offsetWidth + sourceWidth;
-    let currentWidth = sourceWidth;
-
-    while (currentWidth < minTrackWidth) {
-      const clone = source.cloneNode(true);
-      clone.removeAttribute('data-marquee-source');
-      clone.setAttribute('data-marquee-clone', 'true');
-      clone.setAttribute('aria-hidden', 'true');
-      inner.appendChild(clone);
-      currentWidth += sourceWidth;
-    }
-  }
-
-  setupMarquee();
-  window.addEventListener('resize', setupMarquee);
-})();
+window.addEventListener('beforeunload', () => {
+  window.scrollTo(0, 0);
+});
 
 /* NAV SCROLL */
 window.addEventListener('scroll', () =>
@@ -49,7 +17,10 @@ gsap.from('.hero-actions', { opacity: 0, y: 20, duration: 0.8, delay: 1.9, ease:
 gsap.from('.hero-img-frame', { opacity: 0, x: 60, duration: 1.2, delay: 1.9, ease: 'power3.out' });
 
 /* SCROLL REVEALS */
-gsap.utils.toArray('.reveal').forEach((el) => {
+gsap.utils
+  .toArray('.reveal')
+  .filter((el) => !el.closest('#about'))
+  .forEach((el) => {
   gsap.from(el, {
     opacity: 0,
     y: 48,
@@ -72,8 +43,118 @@ gsap.utils.toArray('.skill-item').forEach((item) => {
   });
 });
 
+/* ABOUT TRANSITION */
+const aboutSection = document.getElementById('about');
+const heroSection = document.getElementById('home');
+if (aboutSection && heroSection) {
+  const aboutLine = aboutSection.querySelector('.about-transition span');
+  const aboutTransition = aboutSection.querySelector('.about-transition');
+  const aboutLabel = aboutSection.querySelector('.about-label');
+  const aboutTitle = aboutSection.querySelector('.section-title');
+  const aboutGrid = aboutSection.querySelector('.edu-grid');
+  const heroContent = heroSection.querySelector('.hero-content');
+  const heroImage = heroSection.querySelector('.hero-img-wrapper');
+  const heroIndicator = heroSection.querySelector('.scroll-indicator');
+  const heroGlow = heroSection.querySelector('#hero-bg-glow');
+  const heroCanvas = heroSection.querySelector('#hero-canvas');
+  const heroCircles = heroSection.querySelectorAll('.hero-bg-circle');
+
+  const heroTargets = [heroContent, heroImage, heroIndicator].filter(Boolean);
+  const heroBackgroundTargets = [heroGlow, heroCanvas, ...heroCircles].filter(Boolean);
+
+  const aboutHandoffTimeline = gsap.timeline({
+    scrollTrigger: {
+      trigger: aboutSection,
+      start: 'top bottom',
+      end: 'top 44%',
+      scrub: 1.15,
+      invalidateOnRefresh: true
+    }
+  });
+
+  aboutHandoffTimeline
+    .to(
+      heroTargets,
+      {
+        x: (index, target) => {
+          if (target === heroImage) {
+            return -Math.min(window.innerWidth * 0.22, 220);
+          }
+          return -Math.min(window.innerWidth * 0.14, 140);
+        },
+        y: (index, target) => (target === heroImage ? -28 : -12),
+        opacity: 0,
+        ease: 'none'
+      },
+      0
+    )
+    .to(
+      heroBackgroundTargets,
+      {
+        x: () => -Math.min(window.innerWidth * 0.09, 90),
+        opacity: 0.18,
+        ease: 'none'
+      },
+      0
+    )
+    .fromTo(
+      aboutTransition,
+      {
+        y: 140,
+        opacity: 0.2
+      },
+      {
+        y: 0,
+        opacity: 1,
+        ease: 'none'
+      },
+      0.08
+    )
+    .fromTo(
+      aboutLine,
+      {
+        scaleX: 0
+      },
+      {
+        scaleX: 1,
+        ease: 'none'
+      },
+      0.16
+    )
+    .fromTo(
+      [aboutLabel, aboutTitle],
+      {
+        y: 150,
+        opacity: 0
+      },
+      {
+        y: 0,
+        opacity: 1,
+        stagger: 0.06,
+        ease: 'none'
+      },
+      0.18
+    )
+    .fromTo(
+      aboutGrid,
+      {
+        y: 180,
+        opacity: 0.16
+      },
+      {
+        y: 0,
+        opacity: 1,
+        ease: 'none'
+      },
+      0.22
+    );
+}
+
 /* SECTION TITLES */
-gsap.utils.toArray('.section-title').forEach((el) => {
+gsap.utils
+  .toArray('.section-title')
+  .filter((el) => !el.closest('#about'))
+  .forEach((el) => {
   gsap.from(el, {
     opacity: 0,
     x: -40,
@@ -92,6 +173,8 @@ gsap.to('.contact-big', {
 
 /* LOADER */
 window.addEventListener('load', () => {
+  window.scrollTo(0, 0);
+
   const loader = document.getElementById('loader');
   const bar = document.getElementById('loader-bar');
   const counter = document.getElementById('loader-counter');
@@ -247,3 +330,4 @@ window.addEventListener('load', () => {
     }
   });
 })();
+
