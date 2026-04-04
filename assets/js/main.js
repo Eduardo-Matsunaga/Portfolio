@@ -1,77 +1,103 @@
 gsap.registerPlugin(ScrollTrigger);
 
-/* ── CURSOR ── */
-const dot  = document.getElementById('cursor-dot');
-const ring = document.getElementById('cursor-ring');
-let mx = -100, my = -100, rx = -100, ry = -100;
+/* MARQUEE */
+(() => {
+  const strip = document.querySelector('.marquee-strip');
+  const inner = document.querySelector('.marquee-inner');
+  const source = inner?.querySelector('[data-marquee-source="true"]');
+  if (!strip || !inner || !source) {
+    return;
+  }
 
-window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+  function setupMarquee() {
+    inner.querySelectorAll('.marquee-group[data-marquee-clone="true"]').forEach((node) => node.remove());
 
-(function animCursor() {
-  rx += (mx - rx) * 0.12;
-  ry += (my - ry) * 0.12;
-  dot.style.transform  = `translate(${mx}px,${my}px) translate(-50%,-50%)`;
-  ring.style.transform = `translate(${rx}px,${ry}px) translate(-50%,-50%)`;
-  requestAnimationFrame(animCursor);
+    const sourceWidth = source.getBoundingClientRect().width;
+    if (!sourceWidth) {
+      return;
+    }
+
+    inner.style.setProperty('--marquee-step', `${sourceWidth}px`);
+
+    const minTrackWidth = strip.offsetWidth + sourceWidth;
+    let currentWidth = sourceWidth;
+
+    while (currentWidth < minTrackWidth) {
+      const clone = source.cloneNode(true);
+      clone.removeAttribute('data-marquee-source');
+      clone.setAttribute('data-marquee-clone', 'true');
+      clone.setAttribute('aria-hidden', 'true');
+      inner.appendChild(clone);
+      currentWidth += sourceWidth;
+    }
+  }
+
+  setupMarquee();
+  window.addEventListener('resize', setupMarquee);
 })();
 
-document.querySelectorAll('a, button, .project-card, .skill-item, .edu-card').forEach(el => {
-  el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
-  el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
-});
-
-/* ── NAV SCROLL ── */
+/* NAV SCROLL */
 window.addEventListener('scroll', () =>
   document.getElementById('navbar').classList.toggle('scrolled', scrollY > 60)
 );
 
-/* ── HERO ENTRANCE ── */
-gsap.from('.hero-tag',      { opacity: 0, y: 30,  duration: 1,   delay: 1.9,  ease: 'power3.out' });
-gsap.from('.hero-title',    { opacity: 0, y: 50,  duration: 1.1, delay: 1.9,  ease: 'power3.out' });
-gsap.from('.hero-desc',     { opacity: 0, y: 30,  duration: 1,   delay: 1.9, ease: 'power3.out' });
-gsap.from('.hero-actions',  { opacity: 0, y: 20,  duration: .8,  delay: 1.9,   ease: 'power3.out' });
-gsap.from('.hero-img-frame',{ opacity: 0, x: 60,  duration: 1.2, delay: 1.9,  ease: 'power3.out' });
+/* HERO ENTRANCE */
+gsap.from('.hero-tag', { opacity: 0, y: 30, duration: 1, delay: 1.9, ease: 'power3.out' });
+gsap.from('.hero-title', { opacity: 0, y: 50, duration: 1.1, delay: 1.9, ease: 'power3.out' });
+gsap.from('.hero-desc', { opacity: 0, y: 30, duration: 1, delay: 1.9, ease: 'power3.out' });
+gsap.from('.hero-actions', { opacity: 0, y: 20, duration: 0.8, delay: 1.9, ease: 'power3.out' });
+gsap.from('.hero-img-frame', { opacity: 0, x: 60, duration: 1.2, delay: 1.9, ease: 'power3.out' });
 
-/* ── SCROLL REVEALS ── */
-gsap.utils.toArray('.reveal').forEach(el => {
+/* SCROLL REVEALS */
+gsap.utils.toArray('.reveal').forEach((el) => {
   gsap.from(el, {
-    opacity: 0, y: 48, duration: .9, ease: 'power3.out',
+    opacity: 0,
+    y: 48,
+    duration: 0.9,
+    ease: 'power3.out',
     scrollTrigger: { trigger: el, start: 'top 88%', once: true }
   });
 });
 
-/* ── SKILL BARS ── */
-gsap.utils.toArray('.skill-item').forEach(item => {
+/* SKILL BARS */
+gsap.utils.toArray('.skill-item').forEach((item) => {
   const fill = item.querySelector('.skill-bar-fill');
   ScrollTrigger.create({
-    trigger: item, start: 'top 85%', once: true,
-    onEnter: () => { fill.style.width = (item.dataset.level || 50) + '%'; }
+    trigger: item,
+    start: 'top 85%',
+    once: true,
+    onEnter: () => {
+      fill.style.width = (item.dataset.level || 50) + '%';
+    }
   });
 });
 
-/* ── SECTION TITLES ── */
-gsap.utils.toArray('.section-title').forEach(el => {
+/* SECTION TITLES */
+gsap.utils.toArray('.section-title').forEach((el) => {
   gsap.from(el, {
-    opacity: 0, x: -40, duration: 1, ease: 'power3.out',
+    opacity: 0,
+    x: -40,
+    duration: 1,
+    ease: 'power3.out',
     scrollTrigger: { trigger: el, start: 'top 85%', once: true }
   });
 });
 
-/* ── CONTACT PARALLAX ── */
+/* CONTACT PARALLAX */
 gsap.to('.contact-big', {
-  y: -80, ease: 'none',
+  y: -80,
+  ease: 'none',
   scrollTrigger: { trigger: '#contact', start: 'top bottom', end: 'bottom top', scrub: true }
 });
 
-// ── LOADER ──────────────────────────────────────
+/* LOADER */
 window.addEventListener('load', () => {
   const loader = document.getElementById('loader');
   const bar = document.getElementById('loader-bar');
   const counter = document.getElementById('loader-counter');
   const name = document.getElementById('loader-name');
 
-  // Animate name in
-  gsap.to(name, { opacity: 1, y: 0, duration: .8, ease: 'power3.out', delay: 0.1 });
+  gsap.to(name, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', delay: 0.1 });
 
   let progress = 0;
   const interval = setInterval(() => {
@@ -84,7 +110,12 @@ window.addEventListener('load', () => {
           yPercent: -100,
           duration: 0.9,
           ease: 'power4.inOut',
-          onComplete: () => { loader.style.display = 'none'; initAnimations(); }
+          onComplete: () => {
+            loader.style.display = 'none';
+            if (typeof initAnimations === 'function') {
+              initAnimations();
+            }
+          }
         });
       }, 300);
     }
@@ -93,62 +124,126 @@ window.addEventListener('load', () => {
   }, 60);
 });
 
-// ── HERO AURORA BG ──
-(function() {
+/* HERO AURORA BG */
+(() => {
   const canvas = document.getElementById('hero-canvas');
-  const ctx = canvas.getContext('2d');
-  const bgg = document.getElementById('hero-bg-glow');
+  const bgGlow = document.getElementById('hero-bg-glow');
   const section = document.getElementById('home');
+  if (!canvas || !bgGlow || !section) {
+    return;
+  }
 
-  let w, h, dots = [], hue = 230;
-  const md = 100, maxWidth = 15, minWidth = 2, hueDif = 50, glow = 10;
-  const maxSpeed = 35, minSpeed = 6;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return;
+  }
+
+  let width;
+  let height;
+  let dots = [];
+  let isActive = false;
+  let rafId = null;
+  const hue = 230;
+  const maxDots = 48;
+  const maxWidth = 12;
+  const minWidth = 2;
+  const hueDifference = 50;
+  const glow = 6;
+  const maxSpeed = 24;
+  const minSpeed = 4;
 
   function resize() {
-    w = canvas.width = section.offsetWidth;
-    h = canvas.height = section.getBoundingClientRect().height || window.innerHeight;
+    width = canvas.width = section.offsetWidth;
+    height = canvas.height = section.getBoundingClientRect().height || window.innerHeight;
     dots = [];
     pushDots();
     ctx.globalCompositeOperation = 'lighter';
   }
 
   function pushDots() {
-    for (let i = 1; i < md; i++) {
+    for (let i = 1; i < maxDots; i += 1) {
       dots.push({
-        x: Math.random() * w,
-        y: Math.random() * h / 2,
-        h: Math.random() * (h * .9 - h * .5) + h * .5,
+        x: Math.random() * width,
+        y: (Math.random() * height) / 2,
+        h: Math.random() * (height * 0.9 - height * 0.5) + height * 0.5,
         w: Math.random() * (maxWidth - minWidth) + minWidth,
-        c: Math.random() * (hueDif * 2) + (hue - hueDif),
+        c: Math.random() * (hueDifference * 2) + (hue - hueDifference),
         m: Math.random() * (maxSpeed - minSpeed) + minSpeed
       });
     }
   }
 
   function render() {
-    ctx.clearRect(0, 0, w, h);
-    for (let i = 0; i < dots.length; i++) {
-      const d = dots[i];
-      ctx.beginPath();
-      const grd = ctx.createLinearGradient(d.x, d.y, d.x + d.w, d.y + d.h);
-      grd.addColorStop(0,  `hsla(${d.c},50%,50%,0)`);
-      grd.addColorStop(.2, `hsla(${d.c+20},50%,50%,.5)`);
-      grd.addColorStop(.5, `hsla(${d.c+50},70%,60%,.8)`);
-      grd.addColorStop(.8, `hsla(${d.c+80},50%,50%,.5)`);
-      grd.addColorStop(1,  `hsla(${d.c+100},50%,50%,0)`);
-      ctx.shadowBlur = glow;
-      ctx.shadowColor = `hsla(${d.c},50%,50%,1)`;
-      ctx.fillStyle = grd;
-      ctx.fillRect(d.x, d.y, d.w, d.h);
-      ctx.closePath();
-      d.x += d.m / 100;
-      if (d.x > w + maxWidth) d.x = -maxWidth;
+    if (!isActive) {
+      rafId = null;
+      return;
     }
-    requestAnimationFrame(render);
+
+    ctx.clearRect(0, 0, width, height);
+
+    for (let i = 0; i < dots.length; i += 1) {
+      const dot = dots[i];
+      const gradient = ctx.createLinearGradient(dot.x, dot.y, dot.x + dot.w, dot.y + dot.h);
+      gradient.addColorStop(0, `hsla(${dot.c},50%,50%,0)`);
+      gradient.addColorStop(0.2, `hsla(${dot.c + 20},50%,50%,.5)`);
+      gradient.addColorStop(0.5, `hsla(${dot.c + 50},70%,60%,.8)`);
+      gradient.addColorStop(0.8, `hsla(${dot.c + 80},50%,50%,.5)`);
+      gradient.addColorStop(1, `hsla(${dot.c + 100},50%,50%,0)`);
+      ctx.shadowBlur = glow;
+      ctx.shadowColor = `hsla(${dot.c},50%,50%,1)`;
+      ctx.fillStyle = gradient;
+      ctx.fillRect(dot.x, dot.y, dot.w, dot.h);
+      dot.x += dot.m / 100;
+
+      if (dot.x > width + maxWidth) {
+        dot.x = -maxWidth;
+      }
+    }
+
+    rafId = requestAnimationFrame(render);
   }
 
-  bgg.style.background = `radial-gradient(ellipse at center, hsla(${hue},50%,50%,.8) 0%,rgba(0,0,0,0) 100%)`;
+  function startRender() {
+    if (isActive || document.hidden) {
+      return;
+    }
+
+    isActive = true;
+    if (rafId === null) {
+      render();
+    }
+  }
+
+  function stopRender() {
+    isActive = false;
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+  }
+
+  bgGlow.style.background = `radial-gradient(ellipse at center, hsla(${hue},50%,50%,.8) 0%,rgba(0,0,0,0) 100%)`;
   resize();
-  render();
   window.addEventListener('resize', resize);
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (entry.isIntersecting) {
+        startRender();
+      } else {
+        stopRender();
+      }
+    },
+    { threshold: 0.15 }
+  );
+
+  observer.observe(section);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopRender();
+    } else if (section.getBoundingClientRect().bottom > 0 && section.getBoundingClientRect().top < window.innerHeight) {
+      startRender();
+    }
+  });
 })();
