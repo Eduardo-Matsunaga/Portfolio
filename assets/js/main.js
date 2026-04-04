@@ -1,7 +1,155 @@
 gsap.registerPlugin(ScrollTrigger);
 
+let heroTitleReady = false;
+
 window.addEventListener('beforeunload', () => {
   window.scrollTo(0, 0);
+});
+
+document.querySelectorAll('.hero-title, .section-title').forEach((title, titleIndex) => {
+  if (title.dataset.lettersReady === 'true') {
+    return;
+  }
+
+  title.dataset.lettersReady = 'true';
+  title.classList.add('title-motion');
+  title.style.setProperty('--title-cycle', `${11 + (titleIndex % 3)}s`);
+  const isHeroTitle = title.classList.contains('hero-title');
+
+  let charIndex = 0;
+
+  const wrapNode = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const fragment = document.createDocumentFragment();
+
+      [...node.textContent].forEach((char) => {
+        if (char.trim() === '') {
+          fragment.appendChild(document.createTextNode(char));
+          return;
+        }
+
+        const span = document.createElement('span');
+        span.className = 'char';
+
+        const spreadBase = (isHeroTitle ? 14 : 24) + (charIndex % 5) * (isHeroTitle ? 5 : 8);
+        const angleA = (charIndex * 37 + titleIndex * 29) * (Math.PI / 180);
+        const angleB = (charIndex * 53 + titleIndex * 17 + 90) * (Math.PI / 180);
+        const sx = Math.cos(angleA) * spreadBase;
+        const sy = Math.sin(angleA) * (spreadBase * (isHeroTitle ? 0.38 : 0.62));
+        const sr = (charIndex % 2 === 0 ? 1 : -1) * (isHeroTitle ? 8 + (charIndex % 4) * 4 : 10 + (charIndex % 4) * 6);
+        const ex = Math.cos(angleB) * (spreadBase * (isHeroTitle ? 0.92 : 1.12));
+        const ey = Math.sin(angleB) * (spreadBase * (isHeroTitle ? 0.48 : 0.88));
+        const er = (charIndex % 2 === 0 ? -1 : 1) * (isHeroTitle ? 10 + (charIndex % 5) * 4 : 14 + (charIndex % 5) * 5);
+
+        span.style.setProperty('--char-index', charIndex);
+        span.style.setProperty('--sx', `${sx}px`);
+        span.style.setProperty('--sy', `${sy}px`);
+        span.style.setProperty('--sr', `${sr}deg`);
+        span.style.setProperty('--ex', `${ex}px`);
+        span.style.setProperty('--ey', `${ey}px`);
+        span.style.setProperty('--er', `${er}deg`);
+        span.dataset.sx = String(sx);
+        span.dataset.sy = String(sy);
+        span.dataset.sr = String(sr);
+        span.dataset.ex = String(ex);
+        span.dataset.ey = String(ey);
+        span.dataset.er = String(er);
+        span.textContent = char;
+
+        fragment.appendChild(span);
+        charIndex += 1;
+      });
+
+      node.parentNode.replaceChild(fragment, node);
+      return;
+    }
+
+    if (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains('char')) {
+      Array.from(node.childNodes).forEach(wrapNode);
+    }
+  };
+
+  Array.from(title.childNodes).forEach(wrapNode);
+});
+
+function animateTitleTogether(title) {
+  const chars = title.querySelectorAll('.char');
+  if (!chars.length) {
+    return;
+  }
+
+  const isHeroTitle = title.classList.contains('hero-title');
+
+  gsap.to(chars, {
+    x: 0,
+    y: 0,
+    rotate: 0,
+    opacity: 1,
+    duration: isHeroTitle ? 2.35 : 1.35,
+    ease: isHeroTitle ? 'elastic.out(1, 0.58)' : 'power3.out',
+    stagger: isHeroTitle ? 0.075 : 0.045,
+    overwrite: 'auto'
+  });
+}
+
+function animateTitleApart(title, direction = 'down') {
+  const chars = title.querySelectorAll('.char');
+  if (!chars.length) {
+    return;
+  }
+
+  gsap.to(chars, {
+    x: (index, char) => Number(char.dataset[direction === 'down' ? 'ex' : 'sx'] || 0),
+    y: (index, char) => Number(char.dataset[direction === 'down' ? 'ey' : 'sy'] || 0),
+    rotate: (index, char) => Number(char.dataset[direction === 'down' ? 'er' : 'sr'] || 0),
+    opacity: direction === 'down' ? 0 : 0,
+    duration: 1.05,
+    ease: direction === 'down' ? 'power2.in' : 'power2.out',
+    stagger: 0.03,
+    overwrite: 'auto'
+  });
+}
+
+document.querySelectorAll('.hero-title, .section-title').forEach((title) => {
+  const trigger = title.closest('section, div[id]') || title;
+  const isHeroTitle = title.classList.contains('hero-title');
+
+  gsap.set(title.querySelectorAll('.char'), {
+    x: (index, char) => Number(char.dataset.sx || 0),
+    y: (index, char) => Number(char.dataset.sy || 0),
+    rotate: (index, char) => Number(char.dataset.sr || 0),
+    opacity: 0
+  });
+
+  ScrollTrigger.create({
+    trigger,
+    start: 'top 72%',
+    end: 'bottom 28%',
+    onEnter: () => {
+      if (isHeroTitle && !heroTitleReady) {
+        return;
+      }
+      animateTitleTogether(title);
+    },
+    onEnterBack: () => {
+      if (isHeroTitle && !heroTitleReady) {
+        return;
+      }
+      animateTitleTogether(title);
+    },
+    onLeave: () => {
+      if (isHeroTitle && !heroTitleReady) {
+        return;
+      }
+      animateTitleApart(title, 'down');
+    },
+    onLeaveBack: () => {
+      if (isHeroTitle && !heroTitleReady) {
+        return;
+      }
+      animateTitleApart(title, 'up');
+    }
+  });
 });
 
 /* NAV SCROLL */
@@ -11,7 +159,6 @@ window.addEventListener('scroll', () =>
 
 /* HERO ENTRANCE */
 gsap.from('.hero-tag', { opacity: 0, y: 30, duration: 1, delay: 1.9, ease: 'power3.out' });
-gsap.from('.hero-title', { opacity: 0, y: 50, duration: 1.1, delay: 1.9, ease: 'power3.out' });
 gsap.from('.hero-desc', { opacity: 0, y: 30, duration: 1, delay: 1.9, ease: 'power3.out' });
 gsap.from('.hero-actions', { opacity: 0, y: 20, duration: 0.8, delay: 1.9, ease: 'power3.out' });
 gsap.from('.hero-img-frame', { opacity: 0, x: 60, duration: 1.2, delay: 1.9, ease: 'power3.out' });
@@ -195,6 +342,8 @@ window.addEventListener('load', () => {
           ease: 'power4.inOut',
           onComplete: () => {
             loader.style.display = 'none';
+            heroTitleReady = true;
+            animateTitleTogether(document.querySelector('.hero-title'));
             if (typeof initAnimations === 'function') {
               initAnimations();
             }
