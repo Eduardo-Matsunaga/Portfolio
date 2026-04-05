@@ -181,17 +181,39 @@
 
   <!-- PROJECTS -->
   <div id="projects" class="projects-section">
-    <div class="projects-ambient" aria-hidden="true">
-      <div class="projects-noise"></div>
+    <div class="projects-gradient-bg" aria-hidden="true">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="projects-noise-bg" preserveAspectRatio="none">
+        <filter id="projectsNoiseFilterBg">
+          <feTurbulence type="fractalNoise" baseFrequency="0.6" stitchTiles="stitch" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#projectsNoiseFilterBg)" />
+      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" class="projects-svg-blur">
+        <defs>
+          <filter id="projects-goo">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8" result="goo" />
+            <feBlend in="SourceGraphic" in2="goo" />
+          </filter>
+        </defs>
+      </svg>
       <div class="projects-gradients">
-        <span class="projects-blob blob-a"></span>
-        <span class="projects-blob blob-b"></span>
-        <span class="projects-blob blob-c"></span>
-        <span class="projects-blob blob-d"></span>
-        <span class="projects-interactive"></span>
+        <div class="projects-g1"></div>
+        <div class="projects-g2"></div>
+        <div class="projects-g3"></div>
+        <div class="projects-g4"></div>
+        <div class="projects-g5"></div>
+        <div class="projects-interactive"></div>
       </div>
     </div>
     <div class="projects-inner">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="projects-noise-card" preserveAspectRatio="none">
+        <filter id="projectsNoiseFilterCard">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="6" stitchTiles="stitch" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#projectsNoiseFilterCard)" />
+      </svg>
+      <div class="projects-content">
     <p class="section-label">Projetos</p>
     <h2 class="section-title">Meus Projetos</h2>
     <div class="projects-grid">
@@ -200,7 +222,7 @@
         <div class="project-body">
           <p class="project-num">01 — TCC</p>
           <h3 class="project-title">4Monkeys — Sistema de Busca de Desktop</h3>
-          <p class="project-desc">Sistema com usuários Visitante e Premium. Retorna 3 conjuntos classificados em Bronze, Silver e Gold.</p>
+          <p class="project-desc">Sistema com usuários Visitante e Premium. Retorna 3 conjuntos de Desktops e suas especificações classificados em Bronze, Silver e Gold com base em custo benêficio.</p>
           <a href="https://github.com/Trabalho-de-Conculsao-de-Curso/4Monkeys" target="_blank" class="project-link">Ver no GitHub <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
         </div>
       </div>
@@ -250,6 +272,7 @@
         </div>
       </div>
     </div>
+      </div>
     </div>
   </div>
 

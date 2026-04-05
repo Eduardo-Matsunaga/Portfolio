@@ -419,47 +419,41 @@ gsap.to('.contact-big', {
 /* PROJECTS AMBIENT */
 (() => {
   const section = document.getElementById('projects');
-  if (!section) {
+  const interactive = section?.querySelector('.projects-interactive');
+  if (!section || !interactive) {
     return;
   }
 
-  let currentX = 0.5;
-  let currentY = 0.5;
-  let targetX = 0.5;
-  let targetY = 0.5;
-  let rafId = null;
+  let currentX = 0;
+  let currentY = 0;
+  let targetX = 0;
+  let targetY = 0;
+
+  const resetTarget = () => {
+    const rect = section.getBoundingClientRect();
+    targetX = rect.width / 2;
+    targetY = rect.height / 2;
+  };
 
   const render = () => {
-    currentX += (targetX - currentX) * 0.08;
-    currentY += (targetY - currentY) * 0.08;
-    section.style.setProperty('--projects-x', `${(currentX * 100).toFixed(2)}%`);
-    section.style.setProperty('--projects-y', `${(currentY * 100).toFixed(2)}%`);
-    rafId = requestAnimationFrame(render);
+    currentX += (targetX - currentX) / 20;
+    currentY += (targetY - currentY) / 20;
+    interactive.style.transform = `translate(${Math.round(currentX)}px, ${Math.round(currentY)}px)`;
+    requestAnimationFrame(render);
   };
 
   const updateTarget = (event) => {
-    if (window.innerWidth <= 900) {
-      return;
-    }
-
     const rect = section.getBoundingClientRect();
-    targetX = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
-    targetY = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+    targetX = event.clientX - rect.left;
+    targetY = event.clientY - rect.top;
   };
 
-  section.addEventListener('pointermove', updateTarget);
-  section.addEventListener('pointerleave', () => {
-    targetX = 0.5;
-    targetY = 0.5;
-  });
-
-  window.addEventListener('resize', () => {
-    if (window.innerWidth <= 900) {
-      targetX = 0.5;
-      targetY = 0.5;
-    }
-  });
-
+  resetTarget();
+  currentX = targetX;
+  currentY = targetY;
+  section.addEventListener('mousemove', updateTarget);
+  section.addEventListener('mouseleave', resetTarget);
+  window.addEventListener('resize', resetTarget);
   render();
 })();
 
