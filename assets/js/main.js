@@ -562,31 +562,56 @@ window.addEventListener('load', () => {
   let isActive = false;
   let rafId = null;
   const hue = 230;
-  const maxDots = 48;
-  const maxWidth = 12;
-  const minWidth = 2;
-  const hueDifference = 50;
-  const glow = 6;
-  const maxSpeed = 24;
-  const minSpeed = 4;
+
+  function getHeroBgConfig() {
+    if (window.innerWidth <= 425) {
+      return {
+        maxDots: 16,
+        maxWidth: 8,
+        minWidth: 1.5,
+        hueDifference: 24,
+        glow: 5,
+        maxSpeed: 14,
+        minSpeed: 2.5,
+        glowOpacity: 1.42,
+        satMid: 58,
+        lightMid: 56
+      };
+    }
+
+    return {
+      maxDots: 48,
+      maxWidth: 12,
+      minWidth: 2,
+      hueDifference: 50,
+      glow: 6,
+      maxSpeed: 24,
+      minSpeed: 4,
+      glowOpacity: 0.8,
+      satMid: 70,
+      lightMid: 60
+    };
+  }
 
   function resize() {
+    const config = getHeroBgConfig();
     width = canvas.width = section.offsetWidth;
     height = canvas.height = section.getBoundingClientRect().height || window.innerHeight;
     dots = [];
-    pushDots();
+    pushDots(config);
     ctx.globalCompositeOperation = 'lighter';
+    bgGlow.style.background = `radial-gradient(ellipse at center, hsla(${hue},50%,50%,${config.glowOpacity}) 0%,rgba(0,0,0,0) 100%)`;
   }
 
-  function pushDots() {
-    for (let i = 1; i < maxDots; i += 1) {
+  function pushDots(config) {
+    for (let i = 1; i < config.maxDots; i += 1) {
       dots.push({
         x: Math.random() * width,
         y: (Math.random() * height) / 2,
         h: Math.random() * (height * 0.9 - height * 0.5) + height * 0.5,
-        w: Math.random() * (maxWidth - minWidth) + minWidth,
-        c: Math.random() * (hueDifference * 2) + (hue - hueDifference),
-        m: Math.random() * (maxSpeed - minSpeed) + minSpeed
+        w: Math.random() * (config.maxWidth - config.minWidth) + config.minWidth,
+        c: Math.random() * (config.hueDifference * 2) + (hue - config.hueDifference),
+        m: Math.random() * (config.maxSpeed - config.minSpeed) + config.minSpeed
       });
     }
   }
@@ -598,23 +623,24 @@ window.addEventListener('load', () => {
     }
 
     ctx.clearRect(0, 0, width, height);
+    const config = getHeroBgConfig();
 
     for (let i = 0; i < dots.length; i += 1) {
       const dot = dots[i];
       const gradient = ctx.createLinearGradient(dot.x, dot.y, dot.x + dot.w, dot.y + dot.h);
       gradient.addColorStop(0, `hsla(${dot.c},50%,50%,0)`);
-      gradient.addColorStop(0.2, `hsla(${dot.c + 20},50%,50%,.5)`);
-      gradient.addColorStop(0.5, `hsla(${dot.c + 50},70%,60%,.8)`);
-      gradient.addColorStop(0.8, `hsla(${dot.c + 80},50%,50%,.5)`);
+      gradient.addColorStop(0.2, `hsla(${dot.c + 20},50%,50%,.32)`);
+      gradient.addColorStop(0.5, `hsla(${dot.c + 50},${config.satMid}%,${config.lightMid}%,.52)`);
+      gradient.addColorStop(0.8, `hsla(${dot.c + 80},50%,50%,.32)`);
       gradient.addColorStop(1, `hsla(${dot.c + 100},50%,50%,0)`);
-      ctx.shadowBlur = glow;
-      ctx.shadowColor = `hsla(${dot.c},50%,50%,1)`;
+      ctx.shadowBlur = config.glow;
+      ctx.shadowColor = `hsla(${dot.c},50%,50%,.65)`;
       ctx.fillStyle = gradient;
       ctx.fillRect(dot.x, dot.y, dot.w, dot.h);
       dot.x += dot.m / 100;
 
-      if (dot.x > width + maxWidth) {
-        dot.x = -maxWidth;
+      if (dot.x > width + config.maxWidth) {
+        dot.x = -config.maxWidth;
       }
     }
 
@@ -640,7 +666,6 @@ window.addEventListener('load', () => {
     }
   }
 
-  bgGlow.style.background = `radial-gradient(ellipse at center, hsla(${hue},50%,50%,.8) 0%,rgba(0,0,0,0) 100%)`;
   resize();
   window.addEventListener('resize', resize);
 

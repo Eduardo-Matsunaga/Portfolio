@@ -1141,5 +1141,23 @@ footer p { font-family: var(--font-mono); font-size: .7rem; color: var(--muted);
     letter-spacing: .18em;
     bottom: -14px;
   }
+  .hero-bg-circle {
+    filter: blur(80px);
+    opacity: .45;
+  }
+  .hero-bg-circle.c1 {
+    width: 260px;
+    height: 260px;
+    top: -40px;
+    right: -80px;
+  }
+  .hero-bg-circle.c2 {
+    width: 180px;
+    height: 180px;
+    left: 8%;
+    bottom: 6%;
+  }
+  #hero-bg-glow {
+    opacity: .42;
+  }
 }
-
