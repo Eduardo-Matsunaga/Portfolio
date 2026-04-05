@@ -32,16 +32,47 @@ document.querySelectorAll('.hero-title, .section-title').forEach((title, titleIn
 
         const span = document.createElement('span');
         span.className = 'char';
+        const isNarrowHero = isHeroTitle && window.innerWidth <= 768;
+        const isAboutTitle = !isHeroTitle && title.closest('#about');
+        const isNarrowAboutTitle = isAboutTitle && window.innerWidth <= 768;
 
-        const spreadBase = (isHeroTitle ? 14 : 24) + (charIndex % 5) * (isHeroTitle ? 5 : 8);
+        const spreadBase = (
+          isHeroTitle
+            ? (isNarrowHero ? 10 : 14)
+            : (isNarrowAboutTitle ? 14 : 24)
+        ) + (charIndex % 5) * (
+          isHeroTitle
+            ? (isNarrowHero ? 3 : 5)
+            : (isNarrowAboutTitle ? 4 : 8)
+        );
         const angleA = (charIndex * 37 + titleIndex * 29) * (Math.PI / 180);
         const angleB = (charIndex * 53 + titleIndex * 17 + 90) * (Math.PI / 180);
         const sx = Math.cos(angleA) * spreadBase;
-        const sy = Math.sin(angleA) * (spreadBase * (isHeroTitle ? 0.38 : 0.62));
-        const sr = (charIndex % 2 === 0 ? 1 : -1) * (isHeroTitle ? 8 + (charIndex % 4) * 4 : 10 + (charIndex % 4) * 6);
-        const ex = Math.cos(angleB) * (spreadBase * (isHeroTitle ? 0.92 : 1.12));
-        const ey = Math.sin(angleB) * (spreadBase * (isHeroTitle ? 0.48 : 0.88));
-        const er = (charIndex % 2 === 0 ? -1 : 1) * (isHeroTitle ? 10 + (charIndex % 5) * 4 : 14 + (charIndex % 5) * 5);
+        const sy = Math.sin(angleA) * (spreadBase * (
+          isHeroTitle
+            ? (isNarrowHero ? 0.22 : 0.38)
+            : (isNarrowAboutTitle ? 0.34 : 0.62)
+        ));
+        const sr = (charIndex % 2 === 0 ? 1 : -1) * (
+          isHeroTitle
+            ? (isNarrowHero ? 5 + (charIndex % 4) * 2 : 8 + (charIndex % 4) * 4)
+            : (isNarrowAboutTitle ? 6 + (charIndex % 4) * 2 : 10 + (charIndex % 4) * 6)
+        );
+        const ex = Math.cos(angleB) * (spreadBase * (
+          isHeroTitle
+            ? (isNarrowHero ? 0.72 : 0.92)
+            : (isNarrowAboutTitle ? 0.78 : 1.12)
+        ));
+        const ey = Math.sin(angleB) * (spreadBase * (
+          isHeroTitle
+            ? (isNarrowHero ? 0.28 : 0.48)
+            : (isNarrowAboutTitle ? 0.42 : 0.88)
+        ));
+        const er = (charIndex % 2 === 0 ? -1 : 1) * (
+          isHeroTitle
+            ? (isNarrowHero ? 6 + (charIndex % 5) * 2 : 10 + (charIndex % 5) * 4)
+            : (isNarrowAboutTitle ? 8 + (charIndex % 5) * 2 : 14 + (charIndex % 5) * 5)
+        );
 
         span.style.setProperty('--char-index', charIndex);
         span.style.setProperty('--sx', `${sx}px`);
@@ -382,31 +413,47 @@ if (aboutSection && heroSection) {
       0.22
     );
 
-  ScrollTrigger.create({
-    trigger: aboutSection,
+  const createAboutWarpTrigger = (config) => {
+    aboutWarpProgress = 0;
+    aboutWarpDirection = 1;
+
+    return ScrollTrigger.create({
+      trigger: aboutSection,
+      scrub: 1,
+      invalidateOnRefresh: true,
+      onUpdate: (self) => {
+        aboutWarpProgress = self.progress;
+        aboutWarpDirection = self.direction || 1;
+      },
+      onLeave: () => {
+        aboutWarpProgress = 1;
+        aboutWarpDirection = 1;
+      },
+      onEnterBack: () => {
+        aboutWarpProgress = 1;
+        aboutWarpDirection = -1;
+      },
+      onLeaveBack: () => {
+        aboutWarpProgress = 0;
+        aboutWarpDirection = -1;
+      },
+      ...config
+    });
+  };
+
+  const aboutWarpMedia = gsap.matchMedia();
+
+  aboutWarpMedia.add('(max-width: 768px)', () => createAboutWarpTrigger({
+    start: 'top bottom',
+    end: 'bottom top'
+  }));
+
+  aboutWarpMedia.add('(min-width: 769px)', () => createAboutWarpTrigger({
     start: 'top top',
     end: () => `+=${Math.max(window.innerHeight * 0.9, 700)}`,
     pin: true,
-    scrub: 1,
-    anticipatePin: 1,
-    invalidateOnRefresh: true,
-    onUpdate: (self) => {
-      aboutWarpProgress = self.progress;
-      aboutWarpDirection = self.direction || 1;
-    },
-    onLeave: () => {
-      aboutWarpProgress = 1;
-      aboutWarpDirection = 1;
-    },
-    onEnterBack: () => {
-      aboutWarpProgress = 1;
-      aboutWarpDirection = -1;
-    },
-    onLeaveBack: () => {
-      aboutWarpProgress = 0;
-      aboutWarpDirection = -1;
-    }
-  });
+    anticipatePin: 1
+  }));
 }
 
 /* CONTACT PARALLAX */
