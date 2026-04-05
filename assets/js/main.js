@@ -416,6 +416,53 @@ gsap.to('.contact-big', {
   scrollTrigger: { trigger: '#contact', start: 'top bottom', end: 'bottom top', scrub: true }
 });
 
+/* PROJECTS AMBIENT */
+(() => {
+  const section = document.getElementById('projects');
+  if (!section) {
+    return;
+  }
+
+  let currentX = 0.5;
+  let currentY = 0.5;
+  let targetX = 0.5;
+  let targetY = 0.5;
+  let rafId = null;
+
+  const render = () => {
+    currentX += (targetX - currentX) * 0.08;
+    currentY += (targetY - currentY) * 0.08;
+    section.style.setProperty('--projects-x', `${(currentX * 100).toFixed(2)}%`);
+    section.style.setProperty('--projects-y', `${(currentY * 100).toFixed(2)}%`);
+    rafId = requestAnimationFrame(render);
+  };
+
+  const updateTarget = (event) => {
+    if (window.innerWidth <= 900) {
+      return;
+    }
+
+    const rect = section.getBoundingClientRect();
+    targetX = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    targetY = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+  };
+
+  section.addEventListener('pointermove', updateTarget);
+  section.addEventListener('pointerleave', () => {
+    targetX = 0.5;
+    targetY = 0.5;
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth <= 900) {
+      targetX = 0.5;
+      targetY = 0.5;
+    }
+  });
+
+  render();
+})();
+
 /* LOADER */
 window.addEventListener('load', () => {
   window.scrollTo(0, 0);
