@@ -471,6 +471,11 @@ gsap.to('.contact-big', {
     return;
   }
 
+  if (window.innerWidth <= 425) {
+    interactive.style.display = 'none';
+    return;
+  }
+
   let currentX = 0;
   let currentY = 0;
   let targetX = 0;
@@ -566,7 +571,7 @@ window.addEventListener('load', () => {
   function getHeroBgConfig() {
     if (window.innerWidth <= 425) {
       return {
-        maxDots: 16,
+        maxDots: 10,
         maxWidth: 8,
         minWidth: 1.5,
         hueDifference: 24,
