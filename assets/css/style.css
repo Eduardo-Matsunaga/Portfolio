@@ -81,37 +81,46 @@ nav.scrolled {
   gap: 4rem;
   position: relative;
   overflow: hidden;
+  background: #000;
+  isolation: isolate;
+  contain: paint;
 }
 #hero-canvas,
 #hero-bg-glow {
-   position: absolute !important;
-   top: 0; left: 0;
-   width: 100%; height: 100%;
-   z-index: 0;
-   pointer-events: none;
-   grid-area: unset !important;
- }
-#hero-bg-glow {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  position: absolute !important;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
+  grid-area: unset !important;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  contain: paint;
 }
- .hero-content {
-   grid-column: 1;
-   grid-row: 2;
-   position: relative;
-   z-index: 1;
-   margin-top: 0;
-   will-change: transform, opacity;
- }
+#hero-canvas {
+  background: #000;
+}
+#hero-bg-glow {
+  will-change: opacity;
+}
+.hero-content {
+  grid-column: 1;
+  grid-row: 2;
+  position: relative;
+  z-index: 1;
+  margin-top: 0;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  contain: layout paint;
+}
 .hero-bg-circle {
   position: absolute;
   border-radius: 50%;
   filter: blur(120px);
   pointer-events: none;
   z-index: 0;
+  transform: translate3d(0, 0, 0);
+  will-change: transform, opacity;
+  contain: paint;
 }
 .hero-bg-circle.c1 {
   width: 500px; height: 500px;
@@ -143,8 +152,7 @@ nav.scrolled {
 }
 .title-motion .char {
   display: inline-block;
-  will-change: transform, opacity;
-  transform: translate(var(--sx), var(--sy)) rotate(var(--sr));
+  transform: translate3d(var(--sx), var(--sy), 0) rotate(var(--sr));
   opacity: 0;
 }
 .title-motion .title-accent .char {
@@ -166,6 +174,7 @@ nav.scrolled {
 .btn-flip {
   position: relative;
   display: grid;
+  transform: translateZ(0);
   transform-style: preserve-3d;
   transition: transform 1.45s cubic-bezier(.2,.75,.2,1), filter .3s ease;
   will-change: transform;
@@ -194,14 +203,14 @@ nav.scrolled {
 .btn-front {
   position: relative;
   opacity: 1;
-  transform: rotateX(0deg) translateY(0);
+  transform: rotateX(0deg) translate3d(0, 0, 0);
 }
 
 .btn-back {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transform: rotateX(88deg) translateY(35%);
+  transform: rotateX(88deg) translate3d(0, 35%, 0);
   pointer-events: none;
 }
 
@@ -252,7 +261,7 @@ nav.scrolled {
 .btn-primary:focus-visible .btn-front,
 .btn-ghost:focus-visible .btn-front {
   opacity: 0;
-  transform: rotateX(-88deg) translateY(-35%);
+  transform: rotateX(-88deg) translate3d(0, -35%, 0);
 }
 
 .btn-primary:hover .btn-back,
@@ -260,7 +269,7 @@ nav.scrolled {
 .btn-primary:focus-visible .btn-back,
 .btn-ghost:focus-visible .btn-back {
   opacity: 1;
-  transform: rotateX(0deg) translateY(0);
+  transform: rotateX(0deg) translate3d(0, 0, 0);
 }
 
 .btn-primary:active .btn-flip,
@@ -284,21 +293,30 @@ nav.scrolled {
 }
 
 .hero-img-wrapper {
-   grid-column: 2;
-   grid-row: 2;
-   position: relative;
-   z-index: 1;
-   display: flex;
-   justify-content: center;
-   align-items: center;
-   margin-top: 0;
-   will-change: transform, opacity;
- }
+  grid-column: 2;
+  grid-row: 2;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  contain: layout paint;
+}
 .hero-img-frame { position: relative; width: 380px; height: 480px; }
 .hero-img-frame::before {
   content: ''; position: absolute; inset: -1px;
   border: 1px solid #fffb00;
-  transform: translate(12px, 12px); pointer-events: none;
+  transform: translate3d(12px, 12px, 0); pointer-events: none;
+}
+.hero-tag,
+.hero-desc,
+.hero-actions,
+.hero-img-frame {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 .hero-img-frame img {
   width: 100%; height: 100%; object-fit: cover; object-position: top;
@@ -1143,7 +1161,7 @@ footer p { font-family: var(--font-mono); font-size: 1rem; color: var(--white); 
     width: min(290px, 82vw);
   }
   .hero-img-frame::before {
-    transform: translate(8px, 8px);
+    transform: translate3d(8px, 8px, 0);
   }
   .hero-img-badge {
     width: calc(100% - 2rem);

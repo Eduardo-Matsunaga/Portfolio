@@ -4,6 +4,64 @@ let heroTitleReady = false;
 let aboutWarpProgress = 0;
 let aboutWarpDirection = 1;
 
+function setWillChange(targets, value) {
+  gsap.utils.toArray(targets).forEach((target) => {
+    if (target) {
+      target.style.willChange = value;
+    }
+  });
+}
+
+function clearWillChange(targets) {
+  gsap.utils.toArray(targets).forEach((target) => {
+    if (target) {
+      target.style.removeProperty('will-change');
+    }
+  });
+}
+
+function createLayeredTween(method, targets, vars, willChange = 'transform, opacity') {
+  const elements = gsap.utils.toArray(targets).filter(Boolean);
+  if (!elements.length) {
+    return null;
+  }
+
+  const { onStart, onComplete, onInterrupt } = vars;
+
+  return gsap[method](elements, {
+    ...vars,
+    force3D: vars.force3D ?? true,
+    onStart: () => {
+      setWillChange(elements, willChange);
+      onStart?.();
+    },
+    onComplete: () => {
+      clearWillChange(elements);
+      onComplete?.();
+    },
+    onInterrupt: () => {
+      clearWillChange(elements);
+      onInterrupt?.();
+    }
+  });
+}
+
+function throttleWithAnimationFrame(callback) {
+  let scheduled = false;
+
+  return (...args) => {
+    if (scheduled) {
+      return;
+    }
+
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      callback(...args);
+    });
+  };
+}
+
 window.addEventListener('beforeunload', () => {
   window.scrollTo(0, 0);
 });
@@ -113,7 +171,7 @@ function animateTitleTogether(title) {
 
   const isHeroTitle = title.classList.contains('hero-title');
 
-  gsap.to(chars, {
+  createLayeredTween('to', chars, {
     x: 0,
     y: 0,
     rotate: 0,
@@ -131,7 +189,7 @@ function animateTitleApart(title, direction = 'down') {
     return;
   }
 
-  gsap.to(chars, {
+  createLayeredTween('to', chars, {
     x: (index, char) => Number(char.dataset[direction === 'down' ? 'ex' : 'sx'] || 0),
     y: (index, char) => Number(char.dataset[direction === 'down' ? 'ey' : 'sy'] || 0),
     rotate: (index, char) => Number(char.dataset[direction === 'down' ? 'er' : 'sr'] || 0),
@@ -270,15 +328,23 @@ if (flowTitleItems.length) {
 }
 
 /* NAV SCROLL */
-window.addEventListener('scroll', () =>
-  document.getElementById('navbar').classList.toggle('scrolled', scrollY > 60)
-);
+const navbar = document.getElementById('navbar');
+if (navbar) {
+  const syncNavbarState = () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 60);
+  };
+
+  const syncNavbarStateThrottled = throttleWithAnimationFrame(syncNavbarState);
+
+  window.addEventListener('scroll', syncNavbarStateThrottled, { passive: true });
+  window.addEventListener('load', syncNavbarState, { once: true });
+}
 
 /* HERO ENTRANCE */
-gsap.from('.hero-tag', { opacity: 0, y: 30, duration: 1, delay: 1.9, ease: 'power3.out' });
-gsap.from('.hero-desc', { opacity: 0, y: 30, duration: 1, delay: 1.9, ease: 'power3.out' });
-gsap.from('.hero-actions', { opacity: 0, y: 20, duration: 0.8, delay: 1.9, ease: 'power3.out' });
-gsap.from('.hero-img-frame', { opacity: 0, x: 60, duration: 1.2, delay: 1.9, ease: 'power3.out' });
+createLayeredTween('from', '.hero-tag', { opacity: 0, y: 30, duration: 1, delay: 1.9, ease: 'power3.out' });
+createLayeredTween('from', '.hero-desc', { opacity: 0, y: 30, duration: 1, delay: 1.9, ease: 'power3.out' });
+createLayeredTween('from', '.hero-actions', { opacity: 0, y: 20, duration: 0.8, delay: 1.9, ease: 'power3.out' });
+createLayeredTween('from', '.hero-img-frame', { opacity: 0, x: 60, duration: 1.2, delay: 1.9, ease: 'power3.out' });
 
 /* SCROLL REVEALS */
 gsap.utils
@@ -556,16 +622,18 @@ window.addEventListener('load', () => {
     return;
   }
 
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
   if (!ctx) {
     return;
   }
 
   let width;
   let height;
+  let dpr = 1;
   let dots = [];
   let isActive = false;
   let rafId = null;
+  let currentConfig = null;
   const hue = 230;
 
   function getHeroBgConfig() {
@@ -576,8 +644,8 @@ window.addEventListener('load', () => {
         minWidth: 1.5,
         hueDifference: 24,
         glow: 5,
-        maxSpeed: 14,
-        minSpeed: 2.5,
+        maxSpeed: 0.14,
+        minSpeed: 0.025,
         glowOpacity: 1.42,
         satMid: 58,
         lightMid: 56
@@ -590,34 +658,90 @@ window.addEventListener('load', () => {
       minWidth: 2,
       hueDifference: 50,
       glow: 6,
-      maxSpeed: 24,
-      minSpeed: 4,
+      maxSpeed: 0.24,
+      minSpeed: 0.04,
       glowOpacity: 0.8,
       satMid: 70,
       lightMid: 60
     };
   }
 
+  function createDotSprite(dot, config) {
+    const padding = config.glow * 4;
+    const drawWidth = dot.w + padding * 2;
+    const drawHeight = dot.h + padding * 2;
+    const buffer = typeof OffscreenCanvas !== 'undefined'
+      ? new OffscreenCanvas(Math.ceil(drawWidth * dpr), Math.ceil(drawHeight * dpr))
+      : document.createElement('canvas');
+
+    buffer.width = Math.ceil(drawWidth * dpr);
+    buffer.height = Math.ceil(drawHeight * dpr);
+
+    const bufferCtx = buffer.getContext('2d');
+    if (!bufferCtx) {
+      return {
+        image: buffer,
+        drawWidth,
+        drawHeight,
+        offsetX: padding,
+        offsetY: padding
+      };
+    }
+
+    bufferCtx.scale(dpr, dpr);
+
+    const gradient = bufferCtx.createLinearGradient(padding, padding, padding + dot.w, padding + dot.h);
+    gradient.addColorStop(0, `hsla(${dot.c},50%,50%,0)`);
+    gradient.addColorStop(0.2, `hsla(${dot.c + 20},50%,50%,.32)`);
+    gradient.addColorStop(0.5, `hsla(${dot.c + 50},${config.satMid}%,${config.lightMid}%,.52)`);
+    gradient.addColorStop(0.8, `hsla(${dot.c + 80},50%,50%,.32)`);
+    gradient.addColorStop(1, `hsla(${dot.c + 100},50%,50%,0)`);
+
+    bufferCtx.shadowBlur = config.glow;
+    bufferCtx.shadowColor = `hsla(${dot.c},50%,50%,.65)`;
+    bufferCtx.fillStyle = gradient;
+    bufferCtx.fillRect(padding, padding, dot.w, dot.h);
+
+    return {
+      image: buffer,
+      drawWidth,
+      drawHeight,
+      offsetX: padding,
+      offsetY: padding
+    };
+  }
+
   function resize() {
-    const config = getHeroBgConfig();
-    width = canvas.width = section.offsetWidth;
-    height = canvas.height = section.getBoundingClientRect().height || window.innerHeight;
-    dots = [];
-    pushDots(config);
+    currentConfig = getHeroBgConfig();
+    width = section.clientWidth;
+    height = Math.round(section.getBoundingClientRect().height || window.innerHeight);
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.globalCompositeOperation = 'lighter';
-    bgGlow.style.background = `radial-gradient(ellipse at center, hsla(${hue},50%,50%,${config.glowOpacity}) 0%,rgba(0,0,0,0) 100%)`;
+    dots = [];
+    pushDots(currentConfig);
+    bgGlow.style.background = `radial-gradient(ellipse at center, hsla(${hue},50%,50%,${currentConfig.glowOpacity}) 0%,rgba(0,0,0,0) 100%)`;
   }
 
   function pushDots(config) {
     for (let i = 1; i < config.maxDots; i += 1) {
-      dots.push({
+      const dot = {
         x: Math.random() * width,
         y: (Math.random() * height) / 2,
         h: Math.random() * (height * 0.9 - height * 0.5) + height * 0.5,
         w: Math.random() * (config.maxWidth - config.minWidth) + config.minWidth,
         c: Math.random() * (config.hueDifference * 2) + (hue - config.hueDifference),
         m: Math.random() * (config.maxSpeed - config.minSpeed) + config.minSpeed
-      });
+      };
+
+      dot.sprite = createDotSprite(dot, config);
+      dots.push(dot);
     }
   }
 
@@ -628,24 +752,20 @@ window.addEventListener('load', () => {
     }
 
     ctx.clearRect(0, 0, width, height);
-    const config = getHeroBgConfig();
 
     for (let i = 0; i < dots.length; i += 1) {
       const dot = dots[i];
-      const gradient = ctx.createLinearGradient(dot.x, dot.y, dot.x + dot.w, dot.y + dot.h);
-      gradient.addColorStop(0, `hsla(${dot.c},50%,50%,0)`);
-      gradient.addColorStop(0.2, `hsla(${dot.c + 20},50%,50%,.32)`);
-      gradient.addColorStop(0.5, `hsla(${dot.c + 50},${config.satMid}%,${config.lightMid}%,.52)`);
-      gradient.addColorStop(0.8, `hsla(${dot.c + 80},50%,50%,.32)`);
-      gradient.addColorStop(1, `hsla(${dot.c + 100},50%,50%,0)`);
-      ctx.shadowBlur = config.glow;
-      ctx.shadowColor = `hsla(${dot.c},50%,50%,.65)`;
-      ctx.fillStyle = gradient;
-      ctx.fillRect(dot.x, dot.y, dot.w, dot.h);
-      dot.x += dot.m / 100;
+      ctx.drawImage(
+        dot.sprite.image,
+        dot.x - dot.sprite.offsetX,
+        dot.y - dot.sprite.offsetY,
+        dot.sprite.drawWidth,
+        dot.sprite.drawHeight
+      );
+      dot.x += dot.m;
 
-      if (dot.x > width + config.maxWidth) {
-        dot.x = -config.maxWidth;
+      if (dot.x > width + currentConfig.maxWidth) {
+        dot.x = -currentConfig.maxWidth;
       }
     }
 
@@ -671,8 +791,16 @@ window.addEventListener('load', () => {
     }
   }
 
+  const syncCanvasSize = throttleWithAnimationFrame(resize);
+
   resize();
-  window.addEventListener('resize', resize);
+
+  if (typeof ResizeObserver !== 'undefined') {
+    const resizeObserver = new ResizeObserver(syncCanvasSize);
+    resizeObserver.observe(section);
+  } else {
+    window.addEventListener('resize', syncCanvasSize, { passive: true });
+  }
 
   const observer = new IntersectionObserver(
     ([entry]) => {
