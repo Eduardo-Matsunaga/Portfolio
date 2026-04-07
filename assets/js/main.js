@@ -552,37 +552,182 @@ gsap.to('.contact-big', {
     return;
   }
 
+  let sectionRect = null;
   let currentX = 0;
   let currentY = 0;
   let targetX = 0;
   let targetY = 0;
+  let lastPointerX = 0;
+  let lastPointerY = 0;
+  let isActive = false;
+  let isPointerInside = false;
+  let rafId = null;
+
+  const setInteractivePosition = () => {
+    interactive.style.transform = `translate3d(${Math.round(currentX)}px, ${Math.round(currentY)}px, 0)`;
+  };
+
+  const clampTarget = () => {
+    const width = sectionRect?.width ?? section.clientWidth;
+    const height = sectionRect?.height ?? section.clientHeight;
+
+    targetX = Math.max(0, Math.min(targetX, width));
+    targetY = Math.max(0, Math.min(targetY, height));
+  };
+
+  const updateBounds = () => {
+    sectionRect = section.getBoundingClientRect();
+  };
 
   const resetTarget = () => {
-    const rect = section.getBoundingClientRect();
-    targetX = rect.width / 2;
-    targetY = rect.height / 2;
+    updateBounds();
+    targetX = sectionRect.width / 2;
+    targetY = sectionRect.height / 2;
+    clampTarget();
+  };
+
+  const stopRender = () => {
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
   };
 
   const render = () => {
+    if (!isActive || document.hidden) {
+      stopRender();
+      return;
+    }
+
     currentX += (targetX - currentX) / 20;
     currentY += (targetY - currentY) / 20;
-    interactive.style.transform = `translate(${Math.round(currentX)}px, ${Math.round(currentY)}px)`;
-    requestAnimationFrame(render);
+    setInteractivePosition();
+
+    const settled = Math.abs(targetX - currentX) < 0.15 && Math.abs(targetY - currentY) < 0.15;
+    if (settled) {
+      currentX = targetX;
+      currentY = targetY;
+      setInteractivePosition();
+      rafId = null;
+      return;
+    }
+
+    rafId = requestAnimationFrame(render);
+  };
+
+  const ensureRender = () => {
+    if (!isActive || document.hidden || rafId !== null) {
+      return;
+    }
+
+    rafId = requestAnimationFrame(render);
   };
 
   const updateTarget = (event) => {
-    const rect = section.getBoundingClientRect();
-    targetX = event.clientX - rect.left;
-    targetY = event.clientY - rect.top;
+    updateBounds();
+    lastPointerX = event.clientX;
+    lastPointerY = event.clientY;
+    targetX = event.clientX - sectionRect.left;
+    targetY = event.clientY - sectionRect.top;
+    clampTarget();
+    ensureRender();
+  };
+
+  const syncMetrics = throttleWithAnimationFrame(() => {
+    updateBounds();
+
+    if (isPointerInside) {
+      targetX = lastPointerX - sectionRect.left;
+      targetY = lastPointerY - sectionRect.top;
+      clampTarget();
+    } else {
+      resetTarget();
+    }
+
+    if (!rafId) {
+      currentX = targetX;
+      currentY = targetY;
+      setInteractivePosition();
+    } else {
+      ensureRender();
+    }
+  });
+
+  const start = () => {
+    if (isActive || document.hidden) {
+      return;
+    }
+
+    isActive = true;
+    section.classList.add('projects-active');
+    resetTarget();
+
+    if (currentX === 0 && currentY === 0) {
+      currentX = targetX;
+      currentY = targetY;
+      setInteractivePosition();
+      return;
+    }
+
+    ensureRender();
+  };
+
+  const stop = () => {
+    isActive = false;
+    isPointerInside = false;
+    section.classList.remove('projects-active');
+    stopRender();
   };
 
   resetTarget();
   currentX = targetX;
   currentY = targetY;
-  section.addEventListener('mousemove', updateTarget);
-  section.addEventListener('mouseleave', resetTarget);
-  window.addEventListener('resize', resetTarget);
-  render();
+  setInteractivePosition();
+
+  section.addEventListener('pointerenter', () => {
+    isPointerInside = true;
+    updateBounds();
+  });
+  section.addEventListener('pointermove', updateTarget, { passive: true });
+  section.addEventListener('pointerleave', () => {
+    isPointerInside = false;
+    resetTarget();
+    ensureRender();
+  });
+
+  if (typeof ResizeObserver !== 'undefined') {
+    const resizeObserver = new ResizeObserver(syncMetrics);
+    resizeObserver.observe(section);
+  } else {
+    window.addEventListener('resize', syncMetrics, { passive: true });
+  }
+
+  window.addEventListener('scroll', () => {
+    if (isActive && isPointerInside) {
+      syncMetrics();
+    }
+  }, { passive: true });
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (entry.isIntersecting) {
+        start();
+      } else {
+        stop();
+      }
+    },
+    { threshold: 0.18 }
+  );
+
+  observer.observe(section);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stop();
+    } else if (section.getBoundingClientRect().bottom > 0 && section.getBoundingClientRect().top < window.innerHeight) {
+      start();
+    }
+  });
 })();
 
 /* LOADER */
