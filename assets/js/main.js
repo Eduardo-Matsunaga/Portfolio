@@ -391,6 +391,8 @@ if (aboutSection && heroSection) {
 
   const heroTargets = [heroContent, heroImage, heroIndicator].filter(Boolean);
   const heroBackgroundTargets = [heroGlow, heroCanvas, ...heroCircles].filter(Boolean);
+  const aboutAnimatedTargets = [aboutTransition, aboutLabel, aboutTitle, aboutGrid].filter(Boolean);
+  const aboutCompositeTargets = [...heroTargets, ...heroBackgroundTargets, ...aboutAnimatedTargets];
 
   const aboutHandoffTimeline = gsap.timeline({
     scrollTrigger: {
@@ -398,7 +400,15 @@ if (aboutSection && heroSection) {
       start: 'top bottom',
       end: 'top 44%',
       scrub: 1.15,
-      invalidateOnRefresh: true
+      invalidateOnRefresh: true,
+      onToggle: (self) => {
+        if (self.isActive) {
+          setWillChange([...aboutCompositeTargets, aboutLine], 'transform, opacity');
+          return;
+        }
+
+        clearWillChange([...aboutCompositeTargets, aboutLine]);
+      }
     }
   });
 
@@ -637,7 +647,7 @@ window.addEventListener('load', () => {
   const hue = 230;
 
   function getHeroBgConfig() {
-    if (window.innerWidth <= 425) {
+    if (window.innerWidth <= 768) {
       return {
         maxDots: 10,
         maxWidth: 8,
@@ -653,7 +663,7 @@ window.addEventListener('load', () => {
     }
 
     return {
-      maxDots: 48,
+      maxDots: 28,
       maxWidth: 12,
       minWidth: 2,
       hueDifference: 50,
@@ -833,12 +843,23 @@ window.addEventListener('load', () => {
   }
 
   const stars = [];
+  let containerWidth = 0;
+  let containerHeight = 0;
   let lastScrollY = window.scrollY;
   let active = false;
+  let resizeObserver = null;
+
+  function applyStarVisual(star, y, opacity) {
+    star.el.style.setProperty('--star-x', `${star.x}px`);
+    star.el.style.setProperty('--star-y', `${y}px`);
+    star.el.style.opacity = `${opacity}`;
+  }
 
   function buildStars() {
     container.innerHTML = '';
     stars.length = 0;
+    containerWidth = container.clientWidth;
+    containerHeight = container.clientHeight;
 
     const count = window.innerWidth < 1280 ? 56 : 80;
     for (let i = 0; i < count; i += 1) {
@@ -850,16 +871,17 @@ window.addEventListener('load', () => {
       const isStatic = Math.random() < 0.3;
       const speed = isStatic ? 0 : 0.2 + Math.random() * 0.6;
       const size = isStatic ? 1 + Math.random() : 1 + Math.random() * 2;
+      const xPx = (x / 100) * containerWidth;
+      const yPx = (y / 100) * containerHeight;
 
-      star.style.left = `${x}%`;
-      star.style.top = `${y}%`;
       star.style.width = `${size}px`;
       star.style.height = `${size}px`;
       star.style.setProperty('--duration', `${2 + Math.random() * 4}s`);
       star.style.animationDelay = `${Math.random() * 5}s`;
 
       container.appendChild(star);
-      stars.push({ el: star, initialY: y, speed });
+      stars.push({ el: star, initialY: y, speed, x: xPx });
+      applyStarVisual({ el: star, x: xPx }, yPx, 0.8);
     }
   }
 
@@ -872,14 +894,16 @@ window.addEventListener('load', () => {
     const velocity = scroll - lastScrollY;
     lastScrollY = scroll;
     const progressBoost = 1 + aboutWarpProgress * 2.4;
-    const stretch = Math.max(1, Math.min(1 + Math.abs(velocity) * 0.28 + aboutWarpProgress * 12, 22));
     const travelBoost = Math.max(0, Math.min(Math.abs(velocity) * 0.22 + aboutWarpProgress * 22, 40));
     const driftDirection = velocity === 0 ? -aboutWarpDirection : (velocity >= 0 ? -1 : 1);
 
     stars.forEach((star) => {
       if (star.speed === 0) {
-        star.el.style.transform = `scaleY(${Math.max(1, stretch * 0.32)})`;
-        star.el.style.opacity = `${Math.min(1, 0.35 + Math.abs(velocity) * 0.02 + aboutWarpProgress * 0.25)}`;
+        applyStarVisual(
+          star,
+          star.initialY / 100 * containerHeight,
+          Math.min(1, 0.35 + Math.abs(velocity) * 0.02 + aboutWarpProgress * 0.25)
+        );
         return;
       }
 
@@ -888,18 +912,20 @@ window.addEventListener('load', () => {
         pos += 100;
       }
 
-      star.el.style.top = `${pos}%`;
-      star.el.style.transform = `scaleY(${stretch}) scaleX(${Math.min(2.8, 1 + Math.abs(velocity) * 0.02 + aboutWarpProgress * 0.9)})`;
-      star.el.style.opacity = `${Math.min(1, 0.52 + Math.abs(velocity) * 0.05 + star.speed * 0.4 + aboutWarpProgress * 0.18)}`;
+      applyStarVisual(
+        star,
+        pos / 100 * containerHeight,
+        Math.min(1, 0.52 + Math.abs(velocity) * 0.05 + star.speed * 0.4 + aboutWarpProgress * 0.18)
+      );
     });
   }
 
-  function handleScroll() {
+  const handleScroll = throttleWithAnimationFrame(() => {
     if (!active) {
       return;
     }
     updateStars();
-  }
+  });
 
   function start() {
     if (active || document.hidden || window.innerWidth <= 900) {
@@ -907,16 +933,23 @@ window.addEventListener('load', () => {
     }
 
     active = true;
+    section.classList.add('about-active');
     lastScrollY = window.scrollY;
     updateStars();
   }
 
   function stop() {
     active = false;
+    section.classList.remove('about-active');
   }
 
   buildStars();
-  window.addEventListener('resize', buildStars);
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(throttleWithAnimationFrame(buildStars));
+    resizeObserver.observe(container);
+  } else {
+    window.addEventListener('resize', throttleWithAnimationFrame(buildStars), { passive: true });
+  }
   window.addEventListener('scroll', handleScroll, { passive: true });
 
   const observer = new IntersectionObserver(
