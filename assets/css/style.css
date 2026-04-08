@@ -149,11 +149,15 @@ nav.scrolled {
 .hero-title-break-xs { display: none; }
 .title-motion {
   position: relative;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 .title-motion .char {
   display: inline-block;
   transform: translate3d(var(--sx), var(--sy), 0) rotate(var(--sr));
   opacity: 0;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 .title-motion .title-accent .char {
   color: inherit;
@@ -567,7 +571,7 @@ nav.scrolled {
 }
 
 /* ── SKILLS ── */
-.skills-section { background: var(--surface); padding: 10rem 4rem; }
+.skills-section { background: var(--surface); padding: 15rem 4rem; }
 .skills-inner { max-width: 1200px; margin: 0 auto; }
 .skills-section .section-label,
 .skills-section .section-title { text-align: center; }
@@ -580,7 +584,14 @@ nav.scrolled {
 .skill-icon { font-size: 1.85rem; line-height: 1; }
 .skill-name { font-size: 1.2rem; font-weight: 600; }
 .skill-bar-track { height: 2px; background: var(--border); overflow: hidden; }
-.skill-bar-fill { height: 100%; background: var(--gold); width: 0; transition: width 1s cubic-bezier(.4,0,.2,1); }
+.skill-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 1s cubic-bezier(.4,0,.2,1);
+}
 .skill-level { font-family: var(--font-mono); font-size: 1rem; color: var(--muted); }
 
 /* ── PROJECTS ── */
@@ -804,7 +815,9 @@ footer p { font-family: var(--font-mono); font-size: 1rem; color: var(--white); 
     top: 0; left: 0;
     height: 100%;
     background: var(--accent);
-    width: 0;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left center;
   }
   .loader-counter {
     font-family: var(--font-mono);

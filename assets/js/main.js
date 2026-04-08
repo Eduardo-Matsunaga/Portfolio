@@ -1,8 +1,27 @@
 gsap.registerPlugin(ScrollTrigger);
 
+let lenis = null;
 let heroTitleReady = false;
 let aboutWarpProgress = 0;
 let aboutWarpDirection = 1;
+const titleCharsMap = new WeakMap();
+
+if (typeof window.Lenis === 'function' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  lenis = new window.Lenis({
+    autoRaf: false,
+    anchors: true,
+    lerp: 0.09,
+    wheelMultiplier: 1,
+    touchMultiplier: 1
+  });
+
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add((time) => {
+    lenis?.raf(time * 1000);
+  });
+  gsap.ticker.lagSmoothing(0);
+  window.lenis = lenis;
+}
 
 function setWillChange(targets, value) {
   gsap.utils.toArray(targets).forEach((target) => {
@@ -63,6 +82,11 @@ function throttleWithAnimationFrame(callback) {
 }
 
 window.addEventListener('beforeunload', () => {
+  if (lenis) {
+    lenis.scrollTo(0, { immediate: true, force: true });
+    return;
+  }
+
   window.scrollTo(0, 0);
 });
 
@@ -145,6 +169,7 @@ document.querySelectorAll('.hero-title, .section-title').forEach((title, titleIn
         span.dataset.ex = String(ex);
         span.dataset.ey = String(ey);
         span.dataset.er = String(er);
+        span._motion = { sx, sy, sr, ex, ey, er };
         span.textContent = char;
 
         fragment.appendChild(span);
@@ -161,10 +186,11 @@ document.querySelectorAll('.hero-title, .section-title').forEach((title, titleIn
   };
 
   Array.from(title.childNodes).forEach(wrapNode);
+  titleCharsMap.set(title, Array.from(title.querySelectorAll('.char')));
 });
 
 function animateTitleTogether(title) {
-  const chars = title.querySelectorAll('.char');
+  const chars = titleCharsMap.get(title) || [];
   if (!chars.length) {
     return;
   }
@@ -184,16 +210,16 @@ function animateTitleTogether(title) {
 }
 
 function animateTitleApart(title, direction = 'down') {
-  const chars = title.querySelectorAll('.char');
+  const chars = titleCharsMap.get(title) || [];
   if (!chars.length) {
     return;
   }
 
   createLayeredTween('to', chars, {
-    x: (index, char) => Number(char.dataset[direction === 'down' ? 'ex' : 'sx'] || 0),
-    y: (index, char) => Number(char.dataset[direction === 'down' ? 'ey' : 'sy'] || 0),
-    rotate: (index, char) => Number(char.dataset[direction === 'down' ? 'er' : 'sr'] || 0),
-    opacity: direction === 'down' ? 0 : 0,
+    x: (index, char) => char._motion?.[direction === 'down' ? 'ex' : 'sx'] ?? 0,
+    y: (index, char) => char._motion?.[direction === 'down' ? 'ey' : 'sy'] ?? 0,
+    rotate: (index, char) => char._motion?.[direction === 'down' ? 'er' : 'sr'] ?? 0,
+    opacity: 0,
     duration: 1.05,
     ease: direction === 'down' ? 'power2.in' : 'power2.out',
     stagger: 0.03,
@@ -225,10 +251,12 @@ document.querySelectorAll('.hero-title, .section-title').forEach((title) => {
   const isContactTitle = Boolean(title.closest('#contact'));
   const trigger = title.closest('section, div[id]') || title;
 
-  gsap.set(title.querySelectorAll('.char'), {
-    x: (index, char) => Number(char.dataset.sx || 0),
-    y: (index, char) => Number(char.dataset.sy || 0),
-    rotate: (index, char) => Number(char.dataset.sr || 0),
+  const chars = titleCharsMap.get(title) || [];
+
+  gsap.set(chars, {
+    x: (index, char) => char._motion?.sx ?? 0,
+    y: (index, char) => char._motion?.sy ?? 0,
+    rotate: (index, char) => char._motion?.sr ?? 0,
     opacity: 0
   });
   title.dataset.titleState = 'apart';
@@ -274,37 +302,7 @@ document.querySelectorAll('.hero-title, .section-title').forEach((title) => {
 });
 
 if (flowTitleItems.length) {
-  const updateFlowTitleStates = () => {
-    const anchor = window.innerHeight * 0.56;
-    let activeIndex = -1;
-
-    flowTitleItems.forEach((item, index) => {
-      const rect = item.section.getBoundingClientRect();
-      if (rect.top <= anchor && rect.bottom >= anchor && activeIndex === -1) {
-        activeIndex = index;
-      }
-    });
-
-    if (activeIndex === -1) {
-      const firstRect = flowTitleItems[0].section.getBoundingClientRect();
-      const lastIndex = flowTitleItems.length - 1;
-      const lastRect = flowTitleItems[lastIndex].section.getBoundingClientRect();
-
-      if (firstRect.top > anchor) {
-        flowTitleItems.forEach((item) => setTitleState(item.title, 'apart', 'up'));
-        return;
-      }
-
-      if (lastRect.bottom < anchor) {
-        flowTitleItems.forEach((item, index) => {
-          setTitleState(item.title, index === lastIndex ? 'together' : 'apart', 'down');
-        });
-        return;
-      }
-
-      return;
-    }
-
+  const applyFlowTitleState = (activeIndex) => {
     flowTitleItems.forEach((item, index) => {
       if (index === activeIndex) {
         setTitleState(item.title, 'together');
@@ -315,16 +313,61 @@ if (flowTitleItems.length) {
     });
   };
 
-  ScrollTrigger.create({
-    trigger: document.documentElement,
-    start: 0,
-    end: 'max',
-    onUpdate: updateFlowTitleStates
+  const setFlowTitlesBeforeFirst = () => {
+    flowTitleItems.forEach((item) => setTitleState(item.title, 'apart', 'up'));
+  };
+
+  const setFlowTitlesAfterLast = () => {
+    const lastIndex = flowTitleItems.length - 1;
+    flowTitleItems.forEach((item, index) => {
+      setTitleState(item.title, index === lastIndex ? 'together' : 'apart', 'down');
+    });
+  };
+
+  const flowTriggers = flowTitleItems.map((item, index) => {
+    const isFirst = index === 0;
+    const isLast = index === flowTitleItems.length - 1;
+
+    return ScrollTrigger.create({
+      trigger: item.section,
+      start: 'top 56%',
+      end: 'bottom 56%',
+      onEnter: () => applyFlowTitleState(index),
+      onEnterBack: () => applyFlowTitleState(index),
+      onLeave: () => {
+        if (isLast) {
+          setFlowTitlesAfterLast();
+        }
+      },
+      onLeaveBack: () => {
+        if (isFirst) {
+          setFlowTitlesBeforeFirst();
+        }
+      }
+    });
   });
 
-  ScrollTrigger.addEventListener('refresh', updateFlowTitleStates);
-  window.addEventListener('load', updateFlowTitleStates);
-  window.addEventListener('resize', updateFlowTitleStates);
+  const getRootScroll = ScrollTrigger.getScrollFunc(window);
+
+  const syncFlowTitlesFromTriggerState = () => {
+    const activeIndex = flowTriggers.findIndex((trigger) => trigger.isActive);
+    if (activeIndex !== -1) {
+      applyFlowTitleState(activeIndex);
+      return;
+    }
+
+    if (getRootScroll() < flowTriggers[0].start) {
+      setFlowTitlesBeforeFirst();
+      return;
+    }
+
+    if (getRootScroll() >= flowTriggers[flowTriggers.length - 1].end) {
+      setFlowTitlesAfterLast();
+    }
+  };
+
+  ScrollTrigger.addEventListener('refresh', syncFlowTitlesFromTriggerState);
+  window.addEventListener('load', syncFlowTitlesFromTriggerState, { once: true });
 }
 
 /* NAV SCROLL */
@@ -368,7 +411,7 @@ gsap.utils.toArray('.skill-item').forEach((item) => {
     start: 'top 85%',
     once: true,
     onEnter: () => {
-      fill.style.width = (item.dataset.level || 50) + '%';
+      fill.style.transform = `scaleX(${Number(item.dataset.level || 50) / 100})`;
     }
   });
 });
@@ -525,10 +568,8 @@ if (aboutSection && heroSection) {
   }));
 
   aboutWarpMedia.add('(min-width: 769px)', () => createAboutWarpTrigger({
-    start: 'top top',
-    end: () => `+=${Math.max(window.innerHeight * 0.9, 700)}`,
-    pin: true,
-    anticipatePin: 1
+    start: 'top 72%',
+    end: 'bottom 22%'
   }));
 }
 
@@ -559,7 +600,9 @@ gsap.to('.contact-big', {
   let targetY = 0;
   let lastPointerX = 0;
   let lastPointerY = 0;
+  let lastScrollY = window.scrollY;
   let isActive = false;
+  let isVisible = false;
   let isPointerInside = false;
   let rafId = null;
 
@@ -576,7 +619,13 @@ gsap.to('.contact-big', {
   };
 
   const updateBounds = () => {
-    sectionRect = section.getBoundingClientRect();
+    const rect = section.getBoundingClientRect();
+    sectionRect = {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height
+    };
   };
 
   const resetTarget = () => {
@@ -624,7 +673,6 @@ gsap.to('.contact-big', {
   };
 
   const updateTarget = (event) => {
-    updateBounds();
     lastPointerX = event.clientX;
     lastPointerY = event.clientY;
     targetX = event.clientX - sectionRect.left;
@@ -659,7 +707,9 @@ gsap.to('.contact-big', {
     }
 
     isActive = true;
+    lastScrollY = window.scrollY;
     section.classList.add('projects-active');
+    updateBounds();
     resetTarget();
 
     if (currentX === 0 && currentY === 0) {
@@ -702,14 +752,24 @@ gsap.to('.contact-big', {
     window.addEventListener('resize', syncMetrics, { passive: true });
   }
 
-  window.addEventListener('scroll', () => {
-    if (isActive && isPointerInside) {
-      syncMetrics();
+  window.addEventListener('scroll', throttleWithAnimationFrame(() => {
+    const deltaY = window.scrollY - lastScrollY;
+    lastScrollY = window.scrollY;
+
+    if (!isActive || !isPointerInside || !sectionRect) {
+      return;
     }
-  }, { passive: true });
+
+    sectionRect.top -= deltaY;
+    targetX = lastPointerX - sectionRect.left;
+    targetY = lastPointerY - sectionRect.top;
+    clampTarget();
+    ensureRender();
+  }), { passive: true });
 
   const observer = new IntersectionObserver(
     ([entry]) => {
+      isVisible = entry.isIntersecting;
       if (entry.isIntersecting) {
         start();
       } else {
@@ -724,7 +784,8 @@ gsap.to('.contact-big', {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       stop();
-    } else if (section.getBoundingClientRect().bottom > 0 && section.getBoundingClientRect().top < window.innerHeight) {
+    } else if (isVisible) {
+      lastScrollY = window.scrollY;
       start();
     }
   });
@@ -732,7 +793,11 @@ gsap.to('.contact-big', {
 
 /* LOADER */
 window.addEventListener('load', () => {
-  window.scrollTo(0, 0);
+  if (lenis) {
+    lenis.scrollTo(0, { immediate: true, force: true });
+  } else {
+    window.scrollTo(0, 0);
+  }
 
   const loader = document.getElementById('loader');
   const bar = document.getElementById('loader-bar');
@@ -763,7 +828,7 @@ window.addEventListener('load', () => {
         });
       }, 300);
     }
-    bar.style.width = progress + '%';
+    bar.style.transform = `scaleX(${progress / 100})`;
     counter.textContent = String(Math.floor(progress)).padStart(3, '0');
   }, 60);
 });
@@ -787,6 +852,7 @@ window.addEventListener('load', () => {
   let dpr = 1;
   let dots = [];
   let isActive = false;
+  let isVisible = false;
   let rafId = null;
   let currentConfig = null;
   const hue = 230;
@@ -959,6 +1025,7 @@ window.addEventListener('load', () => {
 
   const observer = new IntersectionObserver(
     ([entry]) => {
+      isVisible = entry.isIntersecting;
       if (entry.isIntersecting) {
         startRender();
       } else {
@@ -973,7 +1040,7 @@ window.addEventListener('load', () => {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       stopRender();
-    } else if (section.getBoundingClientRect().bottom > 0 && section.getBoundingClientRect().top < window.innerHeight) {
+    } else if (isVisible) {
       startRender();
     }
   });
@@ -992,6 +1059,7 @@ window.addEventListener('load', () => {
   let containerHeight = 0;
   let lastScrollY = window.scrollY;
   let active = false;
+  let isVisible = false;
   let resizeObserver = null;
 
   function applyStarVisual(star, y, opacity) {
@@ -1099,6 +1167,7 @@ window.addEventListener('load', () => {
 
   const observer = new IntersectionObserver(
     ([entry]) => {
+      isVisible = entry.isIntersecting;
       if (entry.isIntersecting && window.innerWidth > 900) {
         start();
       } else {
@@ -1113,7 +1182,7 @@ window.addEventListener('load', () => {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       stop();
-    } else if (window.innerWidth > 900 && section.getBoundingClientRect().bottom > 0 && section.getBoundingClientRect().top < window.innerHeight) {
+    } else if (window.innerWidth > 900 && isVisible) {
       start();
     }
   });
