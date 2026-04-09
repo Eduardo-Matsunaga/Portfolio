@@ -592,6 +592,10 @@ nav.scrolled {
 }
 .projects-section .section-label,
 .projects-section .section-title { text-align: center; }
+.projects-section .section-title.title-motion .char {
+  opacity: 1 !important;
+  transform: none !important;
+}
 .projects-ambient {
   position: absolute;
   inset: 0;
@@ -1012,6 +1016,105 @@ footer p { font-family: var(--font-mono); font-size: 1rem; color: var(--white); 
 }
 .project-card::after {
   display: none;
+}
+
+.projects-section.projects-stack {
+  --projects-stack-width: min(100%, 920px);
+  overflow: visible;
+  contain: none;
+}
+
+.projects-section.projects-stack .projects-content {
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  transform: none;
+}
+
+.projects-section.projects-stack .projects-grid {
+  position: sticky;
+  top: var(--projects-stack-sticky-top, 120px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  width: var(--projects-stack-width);
+  max-width: 100%;
+  justify-items: center;
+  align-items: start;
+  margin: 1.75rem auto 0;
+  overflow: visible;
+  perspective: 1800px;
+  transform: none;
+  transform-style: preserve-3d;
+}
+
+.projects-section.projects-stack .projects-inner {
+  overflow: visible;
+  transform: none;
+  contain: none;
+}
+
+.projects-section.projects-stack .project-card {
+  grid-area: 1 / 1;
+  width: var(--projects-stack-width);
+  max-width: 100%;
+  pointer-events: none;
+  transform-origin: 50% 0%;
+}
+
+.projects-section.projects-stack .project-card.is-front {
+  pointer-events: auto;
+}
+
+/* Oculta body dos cards que não estão na frente */
+.projects-section.projects-stack .project-card:not(.is-front) .project-body {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Garante que a imagem do card de trás não transborde */
+.projects-section.projects-stack .project-card:not(.is-front) {
+  overflow: hidden;
+}
+
+.projects-section.projects-stack .project-body {
+  padding: 1.45rem 1.45rem 1.55rem;
+}
+
+/* Layout horizontal no modo stack */
+.projects-section.projects-stack .project-card {
+  display: flex;
+  flex-direction: row;
+}
+
+.projects-section.projects-stack .project-img {
+  flex: 0 0 42%;
+  aspect-ratio: unset;
+  min-height: 280px;
+}
+
+.projects-section.projects-stack .project-img img {
+  height: 100%;
+}
+
+.projects-section.projects-stack .project-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 2.25rem;
+}
+
+.projects-section.projects-stack .project-title {
+  font-size: 1.6rem;
+}
+
+.projects-section.projects-stack .project-desc {
+  font-size: 1rem;
+  -webkit-line-clamp: 4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 @keyframes projectsMoveInCircle {

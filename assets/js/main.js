@@ -104,7 +104,16 @@ document.querySelectorAll('.hero-title, .section-title').forEach((title, titleIn
     return;
   }
 
+  const isProjectsTitle = Boolean(title.closest('#projects'));
+
   title.dataset.lettersReady = 'true';
+
+  if (isProjectsTitle) {
+    title.classList.remove('title-motion');
+    titleCharsMap.set(title, []);
+    return;
+  }
+
   title.classList.add('title-motion');
   title.style.setProperty('--title-cycle', `${11 + (titleIndex % 3)}s`);
   const isHeroTitle = title.classList.contains('hero-title');
@@ -252,6 +261,8 @@ function setTitleState(title, state, direction = 'down') {
 }
 
 const flowTitleItems = [];
+let projectsStackTriggerRef = null;
+let applyFlowTitleStateRef = null;
 
 document.querySelectorAll('.hero-title, .section-title').forEach((title) => {
   const isHeroTitle = title.classList.contains('hero-title');
@@ -262,6 +273,15 @@ document.querySelectorAll('.hero-title, .section-title').forEach((title) => {
 
   const chars = titleCharsMap.get(title) || [];
 
+  if (isProjectsTitle) {
+    title.classList.remove('title-motion');
+    title.removeAttribute('data-title-state');
+    title.style.removeProperty('opacity');
+    title.style.removeProperty('transform');
+    title.style.removeProperty('will-change');
+    return;
+  }
+
   gsap.set(chars, {
     x: (index, char) => char._motion?.sx ?? 0,
     y: (index, char) => char._motion?.sy ?? 0,
@@ -270,8 +290,8 @@ document.querySelectorAll('.hero-title, .section-title').forEach((title) => {
   });
   title.dataset.titleState = 'apart';
 
-  if (isSkillsTitle || isProjectsTitle || isContactTitle) {
-    const section = title.closest('#skills, #projects, #contact');
+  if (isSkillsTitle || isContactTitle) {
+    const section = title.closest('#skills, #contact');
     if (section) {
       flowTitleItems.push({ section, title });
     }
@@ -322,6 +342,8 @@ if (flowTitleItems.length) {
     });
   };
 
+  applyFlowTitleStateRef = applyFlowTitleState;
+
   const setFlowTitlesBeforeFirst = () => {
     flowTitleItems.forEach((item) => setTitleState(item.title, 'apart', 'up'));
   };
@@ -336,11 +358,18 @@ if (flowTitleItems.length) {
   const flowTriggers = flowTitleItems.map((item, index) => {
     const isFirst = index === 0;
     const isLast = index === flowTitleItems.length - 1;
+    const isProjects = item.section.id === 'projects';
 
-    return ScrollTrigger.create({
+    // Projects title is controlled by stackTrigger callbacks directly
+    if (isProjects) {
+      return null;
+    }
+
+    const trigger = ScrollTrigger.create({
       trigger: item.section,
       start: 'top 56%',
       end: 'bottom 56%',
+      invalidateOnRefresh: true,
       onEnter: () => applyFlowTitleState(index),
       onEnterBack: () => applyFlowTitleState(index),
       onLeave: () => {
@@ -354,14 +383,17 @@ if (flowTitleItems.length) {
         }
       }
     });
-  });
+
+    trigger._itemIndex = index;
+    return trigger;
+  }).filter(Boolean);
 
   const getRootScroll = ScrollTrigger.getScrollFunc(window);
 
   const syncFlowTitlesFromTriggerState = () => {
-    const activeIndex = flowTriggers.findIndex((trigger) => trigger.isActive);
-    if (activeIndex !== -1) {
-      applyFlowTitleState(activeIndex);
+    const activeTrigger = flowTriggers.find((trigger) => trigger.isActive);
+    if (activeTrigger) {
+      applyFlowTitleState(activeTrigger._itemIndex);
       return;
     }
 
@@ -401,7 +433,7 @@ createLayeredTween('from', '.hero-img-frame', { opacity: 0, x: 60, duration: 1.2
 /* SCROLL REVEALS */
 gsap.utils
   .toArray('.reveal')
-  .filter((el) => !el.closest('#about'))
+  .filter((el) => !el.closest('#about') && (!el.closest('#projects') || window.innerWidth <= 900))
   .forEach((el) => {
   gsap.from(el, {
     opacity: 0,
@@ -588,6 +620,188 @@ gsap.to('.contact-big', {
   ease: 'none',
   scrollTrigger: { trigger: '#contact', start: 'top bottom', end: 'bottom top', scrub: true }
 });
+
+/* PROJECTS STACK */
+(() => {
+  const section = document.getElementById('projects');
+  const content = section?.querySelector('.projects-content');
+  const grid = section?.querySelector('.projects-grid');
+  const cards = grid ? Array.from(grid.querySelectorAll('.project-card')) : [];
+  if (!section || !content || !grid || cards.length < 2) {
+    return;
+  }
+
+  const stackGap = 22;
+  const stackScaleStep = 0.045;
+  const stackOpacityStep = 0.12;
+  const stackTopInset = 12;
+  const minScale = 0.78;
+  const minOpacity = 0.18;
+  const maxOrder = cards.length - 1;
+  const getStackStickyTop = () => Math.max(96, Math.min(148, window.innerHeight * 0.14));
+  const getStackLeadIn = () => Math.max(64, Math.min(96, window.innerHeight * 0.085));
+  const getStackLeadOut = () => Math.max(140, Math.min(220, window.innerHeight * 0.22));
+  const getStackScrollStep = () => Math.max(190, Math.min(260, window.innerHeight * 0.26));
+  const setters = cards.map((card) => ({
+    y: gsap.quickSetter(card, 'y', 'px'),
+    scale: gsap.quickSetter(card, 'scale'),
+    opacity: gsap.quickSetter(card, 'opacity')
+  }));
+
+  const getOrder = (index, frontIndex) => (
+    (index - frontIndex + cards.length) % cards.length
+  );
+
+  const getInterpolatedOrder = (index, baseIndex, mix) => {
+    const currentOrder = getOrder(index, baseIndex);
+
+    if (baseIndex >= maxOrder) {
+      return currentOrder;
+    }
+
+    if (currentOrder === 0) {
+      return mix * maxOrder;
+    }
+
+    return currentOrder - mix;
+  };
+
+  const getStackTotalDistance = () => (
+    getStackLeadIn() + (getStackScrollStep() * maxOrder) + getStackLeadOut()
+  );
+
+  const syncStackMetrics = () => {
+    const tallestCard = cards.reduce(
+      (currentMax, card) => Math.max(currentMax, card.offsetHeight),
+      0
+    );
+
+    const stageHeight = Math.ceil(tallestCard + stackTopInset + maxOrder * stackGap + 16);
+
+    grid.style.height = `${stageHeight}px`;
+    section.style.setProperty('--projects-stack-stage-height', `${stageHeight}px`);
+    section.style.setProperty('--projects-stack-scroll-distance', `${Math.ceil(getStackTotalDistance())}px`);
+    section.style.setProperty('--projects-stack-sticky-top', `${Math.round(getStackStickyTop())}px`);
+  };
+
+  const syncFrontCard = (orders) => {
+    let frontIndex = 0;
+    let smallestOrder = Number.POSITIVE_INFINITY;
+
+    orders.forEach((order, index) => {
+      if (order < smallestOrder) {
+        smallestOrder = order;
+        frontIndex = index;
+      }
+    });
+
+    cards.forEach((card, index) => {
+      const isFront = index === frontIndex;
+      card.classList.toggle('is-front', isFront);
+      card.setAttribute('aria-hidden', isFront ? 'false' : 'true');
+      card.style.zIndex = String(1000 - Math.round(orders[index] * 100));
+    });
+  };
+
+  const renderStack = (progress = 0) => {
+    const virtualIndex = progress * maxOrder;
+    const baseIndex = Math.floor(virtualIndex);
+    const mix = Math.min(1, virtualIndex - baseIndex);
+    const orders = [];
+
+    cards.forEach((card, index) => {
+      const order = getInterpolatedOrder(index, baseIndex, mix);
+      const y = stackTopInset + order * stackGap;
+      const scale = Math.max(minScale, 1 - order * stackScaleStep);
+      const opacity = Math.max(minOpacity, 1 - order * stackOpacityStep);
+
+      orders[index] = order;
+      setters[index].y(y);
+      setters[index].scale(scale);
+      setters[index].opacity(opacity);
+    });
+
+    syncFrontCard(orders);
+  };
+
+  const getStackProgress = (triggerProgress) => {
+    const leadIn = getStackLeadIn();
+    const leadOut = getStackLeadOut();
+    const travel = getStackScrollStep() * maxOrder;
+    const total = leadIn + travel + leadOut;
+    const start = leadIn / total;
+    const end = (leadIn + travel) / total;
+
+    if (triggerProgress <= start) {
+      return 0;
+    }
+
+    if (triggerProgress >= end) {
+      return 1;
+    }
+
+    return (triggerProgress - start) / (end - start);
+  };
+
+  const projectsStackMedia = gsap.matchMedia();
+
+  projectsStackMedia.add('(min-width: 901px)', () => {
+    section.classList.add('projects-stack');
+    syncStackMetrics();
+
+    gsap.set(cards, {
+      xPercent: 0,
+      rotate: 0,
+      transformOrigin: '50% 0%',
+      force3D: true
+    });
+
+    renderStack(0);
+
+    let stackTrigger = null;
+
+    stackTrigger = ScrollTrigger.create({
+      trigger: section,
+      start: () => `top top`,
+      end: () => `+=${getStackTotalDistance()}`,
+      pin: true,
+      pinSpacing: true,
+      scrub: 0.22,
+      invalidateOnRefresh: true,
+      onRefreshInit: syncStackMetrics,
+      onRefresh: () => renderStack(getStackProgress(stackTrigger ? stackTrigger.progress : 0)),
+      onToggle: (self) => {
+        if (self.isActive) {
+          setWillChange(cards, 'transform, opacity');
+          return;
+        }
+
+        clearWillChange(cards);
+      },
+      onUpdate: (self) => renderStack(getStackProgress(self.progress))
+    });
+
+    projectsStackTriggerRef = stackTrigger;
+    ScrollTrigger.refresh();
+
+    return () => {
+      stackTrigger?.kill();
+      projectsStackTriggerRef = null;
+      section.classList.remove('projects-stack');
+      section.style.removeProperty('--projects-stack-stage-height');
+      section.style.removeProperty('--projects-stack-scroll-distance');
+      section.style.removeProperty('--projects-stack-sticky-top');
+      grid.style.removeProperty('height');
+      cards.forEach((card) => {
+        card.classList.remove('is-front');
+        card.removeAttribute('aria-hidden');
+        card.style.removeProperty('z-index');
+      });
+      clearWillChange(cards);
+      gsap.set(cards, { clearProps: 'xPercent,y,scale,opacity,rotate,transformOrigin' });
+    };
+  });
+})();
 
 /* PROJECTS AMBIENT */
 (() => {
@@ -1234,4 +1448,3 @@ window.addEventListener('load', () => {
     }
   });
 })();
-
