@@ -112,26 +112,7 @@ nav.scrolled {
   backface-visibility: hidden;
   contain: layout paint;
 }
-.hero-bg-circle {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  pointer-events: none;
-  z-index: 0;
-  transform: translate3d(0, 0, 0);
-  will-change: transform, opacity;
-  contain: paint;
-}
-.hero-bg-circle.c1 {
-  width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(201,168,76,.12), transparent 70%);
-  top: -100px; right: -100px;
-}
-.hero-bg-circle.c2 {
-  width: 300px; height: 300px;
-  background: radial-gradient(circle, rgba(90,50,200,.1), transparent 70%);
-  bottom: 0; left: 20%;
-}
+
 .hero-tag {
   font-family: var(--font-mono); font-size: 1rem;
   letter-spacing: .2em; color: var(--gold); text-transform: uppercase;
@@ -1363,4 +1344,62 @@ footer p { font-family: var(--font-mono); font-size: 1rem; color: var(--white); 
     max-width: 280px;
     margin: 0 auto;
   }
+}
+
+html.low-end-device body::before {
+  opacity: .015;
+  background-size: 240px;
+}
+
+html.low-end-device nav.scrolled {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+html.low-end-device .hero-bg-circle {
+  filter: blur(72px);
+  opacity: .38;
+}
+
+html.low-end-device #hero-bg-glow {
+  opacity: .72;
+}
+
+html.low-end-device .about-section::before {
+  filter: blur(14px);
+}
+
+html.low-end-device .about-visual-glow {
+  filter: blur(28px);
+  opacity: .72;
+}
+
+html.low-end-device .edu-card::after {
+  filter: blur(18px);
+  opacity: .42;
+}
+
+html.low-end-device #loader {
+  background-size: 140% 140%;
+  animation-duration: 5.5s;
+}
+
+html.low-end-device .projects-gradients {
+  filter: url(#projects-goo) blur(38px);
+}
+
+html.low-end-device .projects-g5,
+html.low-end-device .projects-interactive,
+html.low-end-device .projects-low-end .projects-interactive {
+  display: none;
+}
+
+html.low-end-device .projects-inner {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+html.low-end-device .project-card {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }

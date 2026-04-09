@@ -1,16 +1,25 @@
 gsap.registerPlugin(ScrollTrigger);
 
+const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+const performanceProfile = {
+  lowEnd: document.documentElement.classList.contains('low-end-device'),
+  reducedMotion: reducedMotionQuery.matches
+};
+
+document.documentElement.classList.toggle('low-end-device', performanceProfile.lowEnd);
+window.runtimePerformanceProfile = performanceProfile;
+
 let lenis = null;
 let heroTitleReady = false;
 let aboutWarpProgress = 0;
 let aboutWarpDirection = 1;
 const titleCharsMap = new WeakMap();
 
-if (typeof window.Lenis === 'function' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+if (typeof window.Lenis === 'function' && !performanceProfile.reducedMotion) {
   lenis = new window.Lenis({
     autoRaf: false,
     anchors: true,
-    lerp: 0.09,
+    lerp: performanceProfile.lowEnd ? 0.075 : 0.09,
     wheelMultiplier: 1,
     touchMultiplier: 1
   });
@@ -588,6 +597,12 @@ gsap.to('.contact-big', {
     return;
   }
 
+  if (performanceProfile.lowEnd) {
+    section.classList.add('projects-low-end');
+    interactive.style.display = 'none';
+    return;
+  }
+
   if (window.innerWidth <= 425) {
     interactive.style.display = 'none';
     return;
@@ -858,6 +873,36 @@ window.addEventListener('load', () => {
   const hue = 230;
 
   function getHeroBgConfig() {
+    if (performanceProfile.lowEnd) {
+      if (window.innerWidth <= 768) {
+        return {
+          maxDots: 6,
+          maxWidth: 6,
+          minWidth: 1.2,
+          hueDifference: 20,
+          glow: 3,
+          maxSpeed: 0.1,
+          minSpeed: 0.02,
+          glowOpacity: 0.9,
+          satMid: 54,
+          lightMid: 54
+        };
+      }
+
+      return {
+        maxDots: 14,
+        maxWidth: 10,
+        minWidth: 1.6,
+        hueDifference: 34,
+        glow: 4,
+        maxSpeed: 0.18,
+        minSpeed: 0.03,
+        glowOpacity: 0.64,
+        satMid: 62,
+        lightMid: 58
+      };
+    }
+
     if (window.innerWidth <= 768) {
       return {
         maxDots: 10,
@@ -936,7 +981,7 @@ window.addEventListener('load', () => {
     currentConfig = getHeroBgConfig();
     width = section.clientWidth;
     height = Math.round(section.getBoundingClientRect().height || window.innerHeight);
-    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    dpr = Math.min(window.devicePixelRatio || 1, performanceProfile.lowEnd ? 1 : 1.5);
 
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
@@ -1074,7 +1119,9 @@ window.addEventListener('load', () => {
     containerWidth = container.clientWidth;
     containerHeight = container.clientHeight;
 
-    const count = window.innerWidth < 1280 ? 56 : 80;
+    const count = performanceProfile.lowEnd
+      ? (window.innerWidth < 1280 ? 24 : 36)
+      : (window.innerWidth < 1280 ? 56 : 80);
     for (let i = 0; i < count; i += 1) {
       const star = document.createElement('div');
       star.className = 'about-star';

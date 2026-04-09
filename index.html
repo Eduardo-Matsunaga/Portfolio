@@ -11,6 +11,22 @@
     if (window.location.hash) {
       history.replaceState(null, '', window.location.pathname + window.location.search);
     }
+    (() => {
+      const params = new URLSearchParams(window.location.search);
+      const forcedPerf = params.get('perf');
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      const lowEndDetected = (
+        (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 4) ||
+        (typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 4) ||
+        Boolean(connection && connection.saveData) ||
+        ['slow-2g', '2g', '3g'].includes((connection && connection.effectiveType) || '')
+      );
+      const lowEnd = forcedPerf === 'low' || (forcedPerf !== 'high' && lowEndDetected);
+
+      if (lowEnd) {
+        document.documentElement.classList.add('low-end-device');
+      }
+    })();
     window.scrollTo(0, 0);
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -45,8 +61,7 @@
   <section id="home">
     <div id="hero-bg-glow"></div>
     <canvas id="hero-canvas"></canvas>
-    <div class="hero-bg-circle c1"></div>
-    <div class="hero-bg-circle c2"></div>
+
     <div class="hero-content">
       <p class="hero-tag">Programador & Entusiasta da T.I.</p>
       <h1 class="hero-title">
