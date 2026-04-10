@@ -631,12 +631,15 @@ gsap.to('.contact-big', {
     return;
   }
 
-  const stackGap = 22;
-  const stackScaleStep = 0.045;
-  const stackOpacityStep = 0.12;
+  const stackGap = 18;
+  const stackScaleStep = 0.06;
+  const stackOpacityStep = 0.15;
   const stackTopInset = 12;
-  const minScale = 0.78;
-  const minOpacity = 0.18;
+  const minScale = 0.72;
+  const minOpacity = 0.12;
+  const maxRotate = 3.5; // degrees alternating
+  const maxXOffset = 14; // px alternating horizontal drift
+  const maxBlur = 4; // px blur on back cards
   const maxOrder = cards.length - 1;
   const getStackStickyTop = () => Math.max(96, Math.min(148, window.innerHeight * 0.14));
   const getStackLeadIn = () => Math.max(64, Math.min(96, window.innerHeight * 0.085));
@@ -644,8 +647,11 @@ gsap.to('.contact-big', {
   const getStackScrollStep = () => Math.max(190, Math.min(260, window.innerHeight * 0.26));
   const setters = cards.map((card) => ({
     y: gsap.quickSetter(card, 'y', 'px'),
+    x: gsap.quickSetter(card, 'x', 'px'),
     scale: gsap.quickSetter(card, 'scale'),
-    opacity: gsap.quickSetter(card, 'opacity')
+    rotate: gsap.quickSetter(card, 'rotate', 'deg'),
+    opacity: gsap.quickSetter(card, 'opacity'),
+    filter: (v) => { card.style.filter = v > 0 ? `blur(${v.toFixed(2)}px)` : ''; }
   }));
 
   const getOrder = (index, frontIndex) => (
@@ -684,6 +690,12 @@ gsap.to('.contact-big', {
     section.style.setProperty('--projects-stack-sticky-top', `${Math.round(getStackStickyTop())}px`);
   };
 
+  // Stack UI elements
+  const stackUI = section.querySelector('.stack-ui');
+  const stackCurrentEl = section.querySelector('.stack-current');
+  const stackTotalEl = section.querySelector('.stack-total');
+  const stackDotsEl = section.querySelector('.stack-dots');
+
   const syncFrontCard = (orders) => {
     let frontIndex = 0;
     let smallestOrder = Number.POSITIVE_INFINITY;
@@ -701,6 +713,16 @@ gsap.to('.contact-big', {
       card.setAttribute('aria-hidden', isFront ? 'false' : 'true');
       card.style.zIndex = String(1000 - Math.round(orders[index] * 100));
     });
+
+    // Update counter and dots
+    if (stackCurrentEl) {
+      stackCurrentEl.textContent = String(frontIndex + 1).padStart(2, '0');
+    }
+    if (stackDotsEl) {
+      stackDotsEl.querySelectorAll('.stack-dot').forEach((dot, i) => {
+        dot.classList.toggle('is-active', i === frontIndex);
+      });
+    }
   };
 
   const renderStack = (progress = 0) => {
@@ -715,10 +737,24 @@ gsap.to('.contact-big', {
       const scale = Math.max(minScale, 1 - order * stackScaleStep);
       const opacity = Math.max(minOpacity, 1 - order * stackOpacityStep);
 
+      // Alternating rotation: odd cards lean right, even lean left
+      const rotateDir = (index % 2 === 0 ? 1 : -1);
+      const rotate = order === 0 ? 0 : Math.min(order * 1.2, maxRotate) * rotateDir;
+
+      // Alternating horizontal drift
+      const xDir = (index % 2 === 0 ? 1 : -1);
+      const x = order === 0 ? 0 : Math.min(order * 4, maxXOffset) * xDir;
+
+      // Blur increases with distance
+      const blur = order === 0 ? 0 : Math.min(order * 1.2, maxBlur);
+
       orders[index] = order;
       setters[index].y(y);
+      setters[index].x(x);
       setters[index].scale(scale);
+      setters[index].rotate(rotate);
       setters[index].opacity(opacity);
+      setters[index].filter(blur);
     });
 
     syncFrontCard(orders);
@@ -751,10 +787,22 @@ gsap.to('.contact-big', {
 
     gsap.set(cards, {
       xPercent: 0,
+      x: 0,
       rotate: 0,
       transformOrigin: '50% 0%',
       force3D: true
     });
+
+    // Init stack UI
+    if (stackTotalEl) stackTotalEl.textContent = String(cards.length).padStart(2, '0');
+    if (stackDotsEl) {
+      stackDotsEl.innerHTML = '';
+      cards.forEach((_, i) => {
+        const dot = document.createElement('span');
+        dot.className = 'stack-dot' + (i === 0 ? ' is-active' : '');
+        stackDotsEl.appendChild(dot);
+      });
+    }
 
     renderStack(0);
 
@@ -798,225 +846,9 @@ gsap.to('.contact-big', {
         card.style.removeProperty('z-index');
       });
       clearWillChange(cards);
-      gsap.set(cards, { clearProps: 'xPercent,y,scale,opacity,rotate,transformOrigin' });
+      gsap.set(cards, { clearProps: 'xPercent,x,y,scale,opacity,rotate,transformOrigin,filter' });
+      cards.forEach((card) => { card.style.filter = ''; });
     };
-  });
-})();
-
-/* PROJECTS AMBIENT */
-(() => {
-  const section = document.getElementById('projects');
-  const interactive = section?.querySelector('.projects-interactive');
-  if (!section || !interactive) {
-    return;
-  }
-
-  if (performanceProfile.lowEnd) {
-    section.classList.add('projects-low-end');
-    interactive.style.display = 'none';
-    return;
-  }
-
-  if (window.innerWidth <= 425) {
-    interactive.style.display = 'none';
-    return;
-  }
-
-  let sectionRect = null;
-  let currentX = 0;
-  let currentY = 0;
-  let targetX = 0;
-  let targetY = 0;
-  let lastPointerX = 0;
-  let lastPointerY = 0;
-  let lastScrollY = window.scrollY;
-  let isActive = false;
-  let isVisible = false;
-  let isPointerInside = false;
-  let rafId = null;
-
-  const setInteractivePosition = () => {
-    interactive.style.transform = `translate3d(${Math.round(currentX)}px, ${Math.round(currentY)}px, 0)`;
-  };
-
-  const clampTarget = () => {
-    const width = sectionRect?.width ?? section.clientWidth;
-    const height = sectionRect?.height ?? section.clientHeight;
-
-    targetX = Math.max(0, Math.min(targetX, width));
-    targetY = Math.max(0, Math.min(targetY, height));
-  };
-
-  const updateBounds = () => {
-    const rect = section.getBoundingClientRect();
-    sectionRect = {
-      left: rect.left,
-      top: rect.top,
-      width: rect.width,
-      height: rect.height
-    };
-  };
-
-  const resetTarget = () => {
-    updateBounds();
-    targetX = sectionRect.width / 2;
-    targetY = sectionRect.height / 2;
-    clampTarget();
-  };
-
-  const stopRender = () => {
-    if (rafId !== null) {
-      cancelAnimationFrame(rafId);
-      rafId = null;
-    }
-  };
-
-  const render = () => {
-    if (!isActive || document.hidden) {
-      stopRender();
-      return;
-    }
-
-    currentX += (targetX - currentX) / 20;
-    currentY += (targetY - currentY) / 20;
-    setInteractivePosition();
-
-    const settled = Math.abs(targetX - currentX) < 0.15 && Math.abs(targetY - currentY) < 0.15;
-    if (settled) {
-      currentX = targetX;
-      currentY = targetY;
-      setInteractivePosition();
-      rafId = null;
-      return;
-    }
-
-    rafId = requestAnimationFrame(render);
-  };
-
-  const ensureRender = () => {
-    if (!isActive || document.hidden || rafId !== null) {
-      return;
-    }
-
-    rafId = requestAnimationFrame(render);
-  };
-
-  const updateTarget = (event) => {
-    lastPointerX = event.clientX;
-    lastPointerY = event.clientY;
-    targetX = event.clientX - sectionRect.left;
-    targetY = event.clientY - sectionRect.top;
-    clampTarget();
-    ensureRender();
-  };
-
-  const syncMetrics = throttleWithAnimationFrame(() => {
-    updateBounds();
-
-    if (isPointerInside) {
-      targetX = lastPointerX - sectionRect.left;
-      targetY = lastPointerY - sectionRect.top;
-      clampTarget();
-    } else {
-      resetTarget();
-    }
-
-    if (!rafId) {
-      currentX = targetX;
-      currentY = targetY;
-      setInteractivePosition();
-    } else {
-      ensureRender();
-    }
-  });
-
-  const start = () => {
-    if (isActive || document.hidden) {
-      return;
-    }
-
-    isActive = true;
-    lastScrollY = window.scrollY;
-    section.classList.add('projects-active');
-    updateBounds();
-    resetTarget();
-
-    if (currentX === 0 && currentY === 0) {
-      currentX = targetX;
-      currentY = targetY;
-      setInteractivePosition();
-      return;
-    }
-
-    ensureRender();
-  };
-
-  const stop = () => {
-    isActive = false;
-    isPointerInside = false;
-    section.classList.remove('projects-active');
-    stopRender();
-  };
-
-  resetTarget();
-  currentX = targetX;
-  currentY = targetY;
-  setInteractivePosition();
-
-  section.addEventListener('pointerenter', () => {
-    isPointerInside = true;
-    updateBounds();
-  });
-  section.addEventListener('pointermove', updateTarget, { passive: true });
-  section.addEventListener('pointerleave', () => {
-    isPointerInside = false;
-    resetTarget();
-    ensureRender();
-  });
-
-  if (typeof ResizeObserver !== 'undefined') {
-    const resizeObserver = new ResizeObserver(syncMetrics);
-    resizeObserver.observe(section);
-  } else {
-    window.addEventListener('resize', syncMetrics, { passive: true });
-  }
-
-  window.addEventListener('scroll', throttleWithAnimationFrame(() => {
-    const deltaY = window.scrollY - lastScrollY;
-    lastScrollY = window.scrollY;
-
-    if (!isActive || !isPointerInside || !sectionRect) {
-      return;
-    }
-
-    sectionRect.top -= deltaY;
-    targetX = lastPointerX - sectionRect.left;
-    targetY = lastPointerY - sectionRect.top;
-    clampTarget();
-    ensureRender();
-  }), { passive: true });
-
-  const observer = new IntersectionObserver(
-    ([entry]) => {
-      isVisible = entry.isIntersecting;
-      if (entry.isIntersecting) {
-        start();
-      } else {
-        stop();
-      }
-    },
-    { threshold: 0.18 }
-  );
-
-  observer.observe(section);
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      stop();
-    } else if (isVisible) {
-      lastScrollY = window.scrollY;
-      start();
-    }
   });
 })();
 
