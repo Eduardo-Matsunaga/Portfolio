@@ -1,6 +1,10 @@
 gsap.registerPlugin(ScrollTrigger);
 
 const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+const lowEndHints =
+  navigator.hardwareConcurrency <= 4 ||
+  navigator.deviceMemory <= 2 ||
+  /Android.*Mobile|iPhone/.test(navigator.userAgent);
 const performanceProfile = {
   lowEnd: document.documentElement.classList.contains('low-end-device'),
   reducedMotion: reducedMotionQuery.matches
@@ -430,6 +434,71 @@ createLayeredTween('from', '.hero-desc', { opacity: 0, y: 30, duration: 1, delay
 createLayeredTween('from', '.hero-actions', { opacity: 0, y: 20, duration: 0.8, delay: 1.9, ease: 'power3.out' });
 createLayeredTween('from', '.hero-img-frame', { opacity: 0, x: 60, duration: 1.2, delay: 1.9, ease: 'power3.out' });
 
+/* HERO VIDEO */
+const playHeroVideoOnce = (() => {
+  const video = document.getElementById('hero-video');
+  if (!video) {
+    return () => {};
+  }
+
+  let videoReady = false;
+  let playbackRequested = false;
+  let playbackStarted = false;
+
+  const revealVideo = () => {
+    video.classList.add('is-ready');
+  };
+
+  const attemptPlayback = () => {
+    if (!videoReady || !playbackRequested || playbackStarted) {
+      return;
+    }
+
+    playbackStarted = true;
+
+    try {
+      video.currentTime = 0;
+    } catch (error) {
+      // Ignore initial seek errors while media data settles.
+    }
+
+    const playback = video.play();
+    if (!playback || typeof playback.catch !== 'function') {
+      return;
+    }
+
+    playback.catch(() => {
+      playbackStarted = false;
+    });
+  };
+
+  const requestPlayback = () => {
+    playbackRequested = true;
+    attemptPlayback();
+  };
+
+  const handleReady = () => {
+    videoReady = true;
+    video.pause();
+    revealVideo();
+    attemptPlayback();
+  };
+
+  video.loop = false;
+
+  if (video.readyState >= 2) {
+    handleReady();
+  } else {
+    video.addEventListener('loadeddata', handleReady, { once: true });
+  }
+
+  video.addEventListener('ended', () => {
+    video.pause();
+  });
+
+  return requestPlayback;
+})();
+
 /* SCROLL REVEALS */
 gsap.utils
   .toArray('.reveal')
@@ -469,14 +538,10 @@ if (aboutSection && heroSection) {
   const heroContent = heroSection.querySelector('.hero-content');
   const heroImage = heroSection.querySelector('.hero-img-wrapper');
   const heroIndicator = heroSection.querySelector('.scroll-indicator');
-  const heroGlow = heroSection.querySelector('#hero-bg-glow');
-  const heroCanvas = heroSection.querySelector('#hero-canvas');
-  const heroCircles = heroSection.querySelectorAll('.hero-bg-circle');
 
   const heroTargets = [heroContent, heroImage, heroIndicator].filter(Boolean);
-  const heroBackgroundTargets = [heroGlow, heroCanvas, ...heroCircles].filter(Boolean);
   const aboutAnimatedTargets = [aboutTransition, aboutLabel, aboutTitle, aboutGrid].filter(Boolean);
-  const aboutCompositeTargets = [...heroTargets, ...heroBackgroundTargets, ...aboutAnimatedTargets];
+  const aboutCompositeTargets = [...heroTargets, ...aboutAnimatedTargets];
 
   const aboutHandoffTimeline = gsap.timeline({
     scrollTrigger: {
@@ -508,15 +573,6 @@ if (aboutSection && heroSection) {
         },
         y: (index, target) => (target === heroImage ? -28 : -12),
         opacity: 0,
-        ease: 'none'
-      },
-      0
-    )
-    .to(
-      heroBackgroundTargets,
-      {
-        x: () => -Math.min(window.innerWidth * 0.09, 90),
-        opacity: 0.18,
         ease: 'none'
       },
       0
@@ -725,6 +781,8 @@ gsap.to('.contact-big', {
     }
   };
 
+  const previousRoundedOrders = cards.map(() => -1);
+
   const renderStack = (progress = 0) => {
     const virtualIndex = progress * maxOrder;
     const baseIndex = Math.floor(virtualIndex);
@@ -754,7 +812,13 @@ gsap.to('.contact-big', {
       setters[index].scale(scale);
       setters[index].rotate(rotate);
       setters[index].opacity(opacity);
-      setters[index].filter(blur);
+
+      // Só aplica blur quando o step inteiro muda — evita recomposição a cada frame
+      const roundedOrder = Math.round(order);
+      if (roundedOrder !== previousRoundedOrders[index]) {
+        previousRoundedOrders[index] = roundedOrder;
+        setters[index].filter(blur);
+      }
     });
 
     syncFrontCard(orders);
@@ -880,6 +944,7 @@ window.addEventListener('load', () => {
           ease: 'power4.inOut',
           onComplete: () => {
             loader.style.display = 'none';
+            playHeroVideoOnce();
             heroTitleReady = true;
             animateTitleTogether(document.querySelector('.hero-title'));
             if (typeof initAnimations === 'function') {
@@ -893,249 +958,6 @@ window.addEventListener('load', () => {
     counter.textContent = String(Math.floor(progress)).padStart(3, '0');
   }, 60);
 });
-
-/* HERO AURORA BG */
-(() => {
-  const canvas = document.getElementById('hero-canvas');
-  const bgGlow = document.getElementById('hero-bg-glow');
-  const section = document.getElementById('home');
-  if (!canvas || !bgGlow || !section) {
-    return;
-  }
-
-  const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
-  if (!ctx) {
-    return;
-  }
-
-  let width;
-  let height;
-  let dpr = 1;
-  let dots = [];
-  let isActive = false;
-  let isVisible = false;
-  let rafId = null;
-  let currentConfig = null;
-  const hue = 230;
-
-  function getHeroBgConfig() {
-    if (performanceProfile.lowEnd) {
-      if (window.innerWidth <= 768) {
-        return {
-          maxDots: 6,
-          maxWidth: 6,
-          minWidth: 1.2,
-          hueDifference: 20,
-          glow: 3,
-          maxSpeed: 0.1,
-          minSpeed: 0.02,
-          glowOpacity: 0.9,
-          satMid: 54,
-          lightMid: 54
-        };
-      }
-
-      return {
-        maxDots: 14,
-        maxWidth: 10,
-        minWidth: 1.6,
-        hueDifference: 34,
-        glow: 4,
-        maxSpeed: 0.18,
-        minSpeed: 0.03,
-        glowOpacity: 0.64,
-        satMid: 62,
-        lightMid: 58
-      };
-    }
-
-    if (window.innerWidth <= 768) {
-      return {
-        maxDots: 10,
-        maxWidth: 8,
-        minWidth: 1.5,
-        hueDifference: 24,
-        glow: 5,
-        maxSpeed: 0.14,
-        minSpeed: 0.025,
-        glowOpacity: 1.42,
-        satMid: 58,
-        lightMid: 56
-      };
-    }
-
-    return {
-      maxDots: 28,
-      maxWidth: 12,
-      minWidth: 2,
-      hueDifference: 50,
-      glow: 6,
-      maxSpeed: 0.24,
-      minSpeed: 0.04,
-      glowOpacity: 0.8,
-      satMid: 70,
-      lightMid: 60
-    };
-  }
-
-  function createDotSprite(dot, config) {
-    const padding = config.glow * 4;
-    const drawWidth = dot.w + padding * 2;
-    const drawHeight = dot.h + padding * 2;
-    const buffer = typeof OffscreenCanvas !== 'undefined'
-      ? new OffscreenCanvas(Math.ceil(drawWidth * dpr), Math.ceil(drawHeight * dpr))
-      : document.createElement('canvas');
-
-    buffer.width = Math.ceil(drawWidth * dpr);
-    buffer.height = Math.ceil(drawHeight * dpr);
-
-    const bufferCtx = buffer.getContext('2d');
-    if (!bufferCtx) {
-      return {
-        image: buffer,
-        drawWidth,
-        drawHeight,
-        offsetX: padding,
-        offsetY: padding
-      };
-    }
-
-    bufferCtx.scale(dpr, dpr);
-
-    const gradient = bufferCtx.createLinearGradient(padding, padding, padding + dot.w, padding + dot.h);
-    gradient.addColorStop(0, `hsla(${dot.c},50%,50%,0)`);
-    gradient.addColorStop(0.2, `hsla(${dot.c + 20},50%,50%,.32)`);
-    gradient.addColorStop(0.5, `hsla(${dot.c + 50},${config.satMid}%,${config.lightMid}%,.52)`);
-    gradient.addColorStop(0.8, `hsla(${dot.c + 80},50%,50%,.32)`);
-    gradient.addColorStop(1, `hsla(${dot.c + 100},50%,50%,0)`);
-
-    bufferCtx.shadowBlur = config.glow;
-    bufferCtx.shadowColor = `hsla(${dot.c},50%,50%,.65)`;
-    bufferCtx.fillStyle = gradient;
-    bufferCtx.fillRect(padding, padding, dot.w, dot.h);
-
-    return {
-      image: buffer,
-      drawWidth,
-      drawHeight,
-      offsetX: padding,
-      offsetY: padding
-    };
-  }
-
-  function resize() {
-    currentConfig = getHeroBgConfig();
-    width = section.clientWidth;
-    height = Math.round(section.getBoundingClientRect().height || window.innerHeight);
-    dpr = Math.min(window.devicePixelRatio || 1, performanceProfile.lowEnd ? 1 : 1.5);
-
-    canvas.width = Math.round(width * dpr);
-    canvas.height = Math.round(height * dpr);
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.globalCompositeOperation = 'lighter';
-    dots = [];
-    pushDots(currentConfig);
-    bgGlow.style.background = `radial-gradient(ellipse at center, hsla(${hue},50%,50%,${currentConfig.glowOpacity}) 0%,rgba(0,0,0,0) 100%)`;
-  }
-
-  function pushDots(config) {
-    for (let i = 1; i < config.maxDots; i += 1) {
-      const dot = {
-        x: Math.random() * width,
-        y: (Math.random() * height) / 2,
-        h: Math.random() * (height * 0.9 - height * 0.5) + height * 0.5,
-        w: Math.random() * (config.maxWidth - config.minWidth) + config.minWidth,
-        c: Math.random() * (config.hueDifference * 2) + (hue - config.hueDifference),
-        m: Math.random() * (config.maxSpeed - config.minSpeed) + config.minSpeed
-      };
-
-      dot.sprite = createDotSprite(dot, config);
-      dots.push(dot);
-    }
-  }
-
-  function render() {
-    if (!isActive) {
-      rafId = null;
-      return;
-    }
-
-    ctx.clearRect(0, 0, width, height);
-
-    for (let i = 0; i < dots.length; i += 1) {
-      const dot = dots[i];
-      ctx.drawImage(
-        dot.sprite.image,
-        dot.x - dot.sprite.offsetX,
-        dot.y - dot.sprite.offsetY,
-        dot.sprite.drawWidth,
-        dot.sprite.drawHeight
-      );
-      dot.x += dot.m;
-
-      if (dot.x > width + currentConfig.maxWidth) {
-        dot.x = -currentConfig.maxWidth;
-      }
-    }
-
-    rafId = requestAnimationFrame(render);
-  }
-
-  function startRender() {
-    if (isActive || document.hidden) {
-      return;
-    }
-
-    isActive = true;
-    if (rafId === null) {
-      render();
-    }
-  }
-
-  function stopRender() {
-    isActive = false;
-    if (rafId !== null) {
-      cancelAnimationFrame(rafId);
-      rafId = null;
-    }
-  }
-
-  const syncCanvasSize = throttleWithAnimationFrame(resize);
-
-  resize();
-
-  if (typeof ResizeObserver !== 'undefined') {
-    const resizeObserver = new ResizeObserver(syncCanvasSize);
-    resizeObserver.observe(section);
-  } else {
-    window.addEventListener('resize', syncCanvasSize, { passive: true });
-  }
-
-  const observer = new IntersectionObserver(
-    ([entry]) => {
-      isVisible = entry.isIntersecting;
-      if (entry.isIntersecting) {
-        startRender();
-      } else {
-        stopRender();
-      }
-    },
-    { threshold: 0.15 }
-  );
-
-  observer.observe(section);
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      stopRender();
-    } else if (isVisible) {
-      startRender();
-    }
-  });
-})();
 
 /* ABOUT STAR WARP */
 (() => {
@@ -1154,9 +976,8 @@ window.addEventListener('load', () => {
   let resizeObserver = null;
 
   function applyStarVisual(star, y, opacity) {
-    star.el.style.setProperty('--star-x', `${star.x}px`);
-    star.el.style.setProperty('--star-y', `${y}px`);
-    star.el.style.opacity = `${opacity}`;
+    star.el.style.transform = `translate3d(${star.x}px,${y}px,0)`;
+    star.el.style.opacity = opacity;
   }
 
   function buildStars() {
@@ -1184,6 +1005,8 @@ window.addEventListener('load', () => {
       star.style.height = `${size}px`;
       star.style.setProperty('--duration', `${2 + Math.random() * 4}s`);
       star.style.animationDelay = `${Math.random() * 5}s`;
+      // Garante que o transform inicial já está no elemento antes de entrar na GPU layer
+      star.style.transform = `translate3d(${xPx}px,${yPx}px,0)`;
 
       container.appendChild(star);
       stars.push({ el: star, initialY: y, speed, x: xPx });

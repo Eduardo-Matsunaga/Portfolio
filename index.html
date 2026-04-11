@@ -59,8 +59,21 @@
 
   <!-- HERO -->
   <section id="home">
-    <div id="hero-bg-glow"></div>
-    <canvas id="hero-canvas"></canvas>
+    <div class="hero-media" aria-hidden="true">
+      <video
+        id="hero-video"
+        class="hero-video"
+        playsinline
+        webkit-playsinline
+        muted
+        preload="auto"
+        disablepictureinpicture
+        disableremoteplayback
+      >
+        <source src="/assets/videos/back.webm" type="video/webm" />
+      </video>
+      <div class="hero-video-overlay"></div>
+    </div>
 
     <div class="hero-content">
       <p class="hero-tag">Programador & Entusiasta da T.I.</p>
