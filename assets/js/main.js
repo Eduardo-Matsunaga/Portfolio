@@ -1,10 +1,6 @@
 gsap.registerPlugin(ScrollTrigger);
 
 const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-const lowEndHints =
-  navigator.hardwareConcurrency <= 4 ||
-  navigator.deviceMemory <= 2 ||
-  /Android.*Mobile|iPhone/.test(navigator.userAgent);
 const performanceProfile = {
   lowEnd: document.documentElement.classList.contains('low-end-device'),
   reducedMotion: reducedMotionQuery.matches
@@ -94,6 +90,32 @@ function throttleWithAnimationFrame(callback) {
   };
 }
 
+const scrollSubscribers = new Set();
+const notifyScrollSubscribers = throttleWithAnimationFrame(() => {
+  const scrollY = window.scrollY;
+  scrollSubscribers.forEach((callback) => callback(scrollY));
+});
+
+function addScrollSubscriber(callback, { immediate = false } = {}) {
+  scrollSubscribers.add(callback);
+
+  if (scrollSubscribers.size === 1) {
+    window.addEventListener('scroll', notifyScrollSubscribers, { passive: true });
+  }
+
+  if (immediate) {
+    callback(window.scrollY);
+  }
+
+  return () => {
+    scrollSubscribers.delete(callback);
+
+    if (!scrollSubscribers.size) {
+      window.removeEventListener('scroll', notifyScrollSubscribers);
+    }
+  };
+}
+
 window.addEventListener('beforeunload', () => {
   if (lenis) {
     lenis.scrollTo(0, { immediate: true, force: true });
@@ -108,18 +130,9 @@ document.querySelectorAll('.hero-title, .section-title').forEach((title, titleIn
     return;
   }
 
-  const isProjectsTitle = Boolean(title.closest('#projects'));
-
   title.dataset.lettersReady = 'true';
 
-  if (isProjectsTitle) {
-    title.classList.remove('title-motion');
-    titleCharsMap.set(title, []);
-    return;
-  }
-
   title.classList.add('title-motion');
-  title.style.setProperty('--title-cycle', `${11 + (titleIndex % 3)}s`);
   const isHeroTitle = title.classList.contains('hero-title');
 
   let charIndex = 0;
@@ -178,19 +191,12 @@ document.querySelectorAll('.hero-title, .section-title').forEach((title, titleIn
             : (isNarrowAboutTitle ? 8 + (charIndex % 5) * 2 : 14 + (charIndex % 5) * 5)
         );
 
-        span.style.setProperty('--char-index', charIndex);
         span.style.setProperty('--sx', `${sx}px`);
         span.style.setProperty('--sy', `${sy}px`);
         span.style.setProperty('--sr', `${sr}deg`);
         span.style.setProperty('--ex', `${ex}px`);
         span.style.setProperty('--ey', `${ey}px`);
         span.style.setProperty('--er', `${er}deg`);
-        span.dataset.sx = String(sx);
-        span.dataset.sy = String(sy);
-        span.dataset.sr = String(sr);
-        span.dataset.ex = String(ex);
-        span.dataset.ey = String(ey);
-        span.dataset.er = String(er);
         span._motion = { sx, sy, sr, ex, ey, er };
         span.textContent = char;
 
@@ -265,26 +271,14 @@ function setTitleState(title, state, direction = 'down') {
 }
 
 const flowTitleItems = [];
-let projectsStackTriggerRef = null;
-let applyFlowTitleStateRef = null;
 
 document.querySelectorAll('.hero-title, .section-title').forEach((title) => {
   const isHeroTitle = title.classList.contains('hero-title');
   const isSkillsTitle = Boolean(title.closest('#skills'));
-  const isProjectsTitle = Boolean(title.closest('#projects'));
   const isContactTitle = Boolean(title.closest('#contact'));
   const trigger = title.closest('section, div[id]') || title;
 
   const chars = titleCharsMap.get(title) || [];
-
-  if (isProjectsTitle) {
-    title.classList.remove('title-motion');
-    title.removeAttribute('data-title-state');
-    title.style.removeProperty('opacity');
-    title.style.removeProperty('transform');
-    title.style.removeProperty('will-change');
-    return;
-  }
 
   gsap.set(chars, {
     x: (index, char) => char._motion?.sx ?? 0,
@@ -346,8 +340,6 @@ if (flowTitleItems.length) {
     });
   };
 
-  applyFlowTitleStateRef = applyFlowTitleState;
-
   const setFlowTitlesBeforeFirst = () => {
     flowTitleItems.forEach((item) => setTitleState(item.title, 'apart', 'up'));
   };
@@ -362,12 +354,6 @@ if (flowTitleItems.length) {
   const flowTriggers = flowTitleItems.map((item, index) => {
     const isFirst = index === 0;
     const isLast = index === flowTitleItems.length - 1;
-    const isProjects = item.section.id === 'projects';
-
-    // Projects title is controlled by stackTrigger callbacks directly
-    if (isProjects) {
-      return null;
-    }
 
     const trigger = ScrollTrigger.create({
       trigger: item.section,
@@ -418,14 +404,11 @@ if (flowTitleItems.length) {
 /* NAV SCROLL */
 const navbar = document.getElementById('navbar');
 if (navbar) {
-  const syncNavbarState = () => {
-    navbar.classList.toggle('scrolled', window.scrollY > 60);
+  const syncNavbarState = (scrollY) => {
+    navbar.classList.toggle('scrolled', scrollY > 60);
   };
 
-  const syncNavbarStateThrottled = throttleWithAnimationFrame(syncNavbarState);
-
-  window.addEventListener('scroll', syncNavbarStateThrottled, { passive: true });
-  window.addEventListener('load', syncNavbarState, { once: true });
+  addScrollSubscriber(syncNavbarState, { immediate: true });
 }
 
 /* HERO ENTRANCE */
@@ -441,16 +424,32 @@ const playHeroVideoOnce = (() => {
     return () => {};
   }
 
+  const disabledOnSmallScreensQuery = window.matchMedia('(max-width: 425px)');
   let videoReady = false;
   let playbackRequested = false;
   let playbackStarted = false;
 
   const revealVideo = () => {
+    video.style.willChange = 'opacity';
     video.classList.add('is-ready');
+    video.addEventListener('transitionend', () => {
+      video.style.removeProperty('will-change');
+    }, { once: true });
+  };
+
+  const hideVideo = () => {
+    video.classList.remove('is-ready');
+    video.style.removeProperty('will-change');
+  };
+
+  const disableVideoPlayback = () => {
+    playbackStarted = false;
+    video.pause();
+    hideVideo();
   };
 
   const attemptPlayback = () => {
-    if (!videoReady || !playbackRequested || playbackStarted) {
+    if (disabledOnSmallScreensQuery.matches || !videoReady || !playbackRequested || playbackStarted) {
       return;
     }
 
@@ -474,12 +473,22 @@ const playHeroVideoOnce = (() => {
 
   const requestPlayback = () => {
     playbackRequested = true;
+    if (disabledOnSmallScreensQuery.matches) {
+      disableVideoPlayback();
+      return;
+    }
     attemptPlayback();
   };
 
   const handleReady = () => {
     videoReady = true;
     video.pause();
+
+    if (disabledOnSmallScreensQuery.matches) {
+      hideVideo();
+      return;
+    }
+
     revealVideo();
     attemptPlayback();
   };
@@ -496,13 +505,32 @@ const playHeroVideoOnce = (() => {
     video.pause();
   });
 
+  const syncVideoStateForViewport = () => {
+    if (disabledOnSmallScreensQuery.matches) {
+      disableVideoPlayback();
+      return;
+    }
+
+    if (videoReady) {
+      revealVideo();
+    }
+
+    attemptPlayback();
+  };
+
+  if (typeof disabledOnSmallScreensQuery.addEventListener === 'function') {
+    disabledOnSmallScreensQuery.addEventListener('change', syncVideoStateForViewport);
+  } else if (typeof disabledOnSmallScreensQuery.addListener === 'function') {
+    disabledOnSmallScreensQuery.addListener(syncVideoStateForViewport);
+  }
+
   return requestPlayback;
 })();
 
 /* SCROLL REVEALS */
 gsap.utils
   .toArray('.reveal')
-  .filter((el) => !el.closest('#about') && (!el.closest('#projects') || window.innerWidth <= 900))
+  .filter((el) => !el.closest('#about') && !el.closest('#skills'))
   .forEach((el) => {
   gsap.from(el, {
     opacity: 0,
@@ -513,15 +541,24 @@ gsap.utils
   });
 });
 
-/* SKILL BARS */
-gsap.utils.toArray('.skill-item').forEach((item) => {
+/* SKILL REVEALS */
+gsap.utils.toArray('#skills .skill-item').forEach((item) => {
   const fill = item.querySelector('.skill-bar-fill');
-  ScrollTrigger.create({
-    trigger: item,
-    start: 'top 85%',
-    once: true,
-    onEnter: () => {
-      fill.style.transform = `scaleX(${Number(item.dataset.level || 50) / 100})`;
+
+  gsap.from(item, {
+    opacity: 0,
+    y: 48,
+    duration: 0.85,
+    ease: 'power3.out',
+    scrollTrigger: {
+      trigger: item,
+      start: 'top 86%',
+      once: true,
+      onEnter: () => {
+        if (fill) {
+          fill.style.transform = `scaleX(${Number(item.dataset.level || 50) / 100})`;
+        }
+      }
     }
   });
 });
@@ -677,245 +714,6 @@ gsap.to('.contact-big', {
   scrollTrigger: { trigger: '#contact', start: 'top bottom', end: 'bottom top', scrub: true }
 });
 
-/* PROJECTS STACK */
-(() => {
-  const section = document.getElementById('projects');
-  const content = section?.querySelector('.projects-content');
-  const grid = section?.querySelector('.projects-grid');
-  const cards = grid ? Array.from(grid.querySelectorAll('.project-card')) : [];
-  if (!section || !content || !grid || cards.length < 2) {
-    return;
-  }
-
-  const stackGap = 18;
-  const stackScaleStep = 0.06;
-  const stackOpacityStep = 0.15;
-  const stackTopInset = 12;
-  const minScale = 0.72;
-  const minOpacity = 0.12;
-  const maxRotate = 3.5; // degrees alternating
-  const maxXOffset = 14; // px alternating horizontal drift
-  const maxBlur = 4; // px blur on back cards
-  const maxOrder = cards.length - 1;
-  const getStackStickyTop = () => Math.max(96, Math.min(148, window.innerHeight * 0.14));
-  const getStackLeadIn = () => Math.max(64, Math.min(96, window.innerHeight * 0.085));
-  const getStackLeadOut = () => Math.max(140, Math.min(220, window.innerHeight * 0.22));
-  const getStackScrollStep = () => Math.max(190, Math.min(260, window.innerHeight * 0.26));
-  const setters = cards.map((card) => ({
-    y: gsap.quickSetter(card, 'y', 'px'),
-    x: gsap.quickSetter(card, 'x', 'px'),
-    scale: gsap.quickSetter(card, 'scale'),
-    rotate: gsap.quickSetter(card, 'rotate', 'deg'),
-    opacity: gsap.quickSetter(card, 'opacity'),
-    filter: (v) => { card.style.filter = v > 0 ? `blur(${v.toFixed(2)}px)` : ''; }
-  }));
-
-  const getOrder = (index, frontIndex) => (
-    (index - frontIndex + cards.length) % cards.length
-  );
-
-  const getInterpolatedOrder = (index, baseIndex, mix) => {
-    const currentOrder = getOrder(index, baseIndex);
-
-    if (baseIndex >= maxOrder) {
-      return currentOrder;
-    }
-
-    if (currentOrder === 0) {
-      return mix * maxOrder;
-    }
-
-    return currentOrder - mix;
-  };
-
-  const getStackTotalDistance = () => (
-    getStackLeadIn() + (getStackScrollStep() * maxOrder) + getStackLeadOut()
-  );
-
-  const syncStackMetrics = () => {
-    const tallestCard = cards.reduce(
-      (currentMax, card) => Math.max(currentMax, card.offsetHeight),
-      0
-    );
-
-    const stageHeight = Math.ceil(tallestCard + stackTopInset + maxOrder * stackGap + 16);
-
-    grid.style.height = `${stageHeight}px`;
-    section.style.setProperty('--projects-stack-stage-height', `${stageHeight}px`);
-    section.style.setProperty('--projects-stack-scroll-distance', `${Math.ceil(getStackTotalDistance())}px`);
-    section.style.setProperty('--projects-stack-sticky-top', `${Math.round(getStackStickyTop())}px`);
-  };
-
-  // Stack UI elements
-  const stackUI = section.querySelector('.stack-ui');
-  const stackCurrentEl = section.querySelector('.stack-current');
-  const stackTotalEl = section.querySelector('.stack-total');
-  const stackDotsEl = section.querySelector('.stack-dots');
-
-  const syncFrontCard = (orders) => {
-    let frontIndex = 0;
-    let smallestOrder = Number.POSITIVE_INFINITY;
-
-    orders.forEach((order, index) => {
-      if (order < smallestOrder) {
-        smallestOrder = order;
-        frontIndex = index;
-      }
-    });
-
-    cards.forEach((card, index) => {
-      const isFront = index === frontIndex;
-      card.classList.toggle('is-front', isFront);
-      card.setAttribute('aria-hidden', isFront ? 'false' : 'true');
-      card.style.zIndex = String(1000 - Math.round(orders[index] * 100));
-    });
-
-    // Update counter and dots
-    if (stackCurrentEl) {
-      stackCurrentEl.textContent = String(frontIndex + 1).padStart(2, '0');
-    }
-    if (stackDotsEl) {
-      stackDotsEl.querySelectorAll('.stack-dot').forEach((dot, i) => {
-        dot.classList.toggle('is-active', i === frontIndex);
-      });
-    }
-  };
-
-  const previousRoundedOrders = cards.map(() => -1);
-
-  const renderStack = (progress = 0) => {
-    const virtualIndex = progress * maxOrder;
-    const baseIndex = Math.floor(virtualIndex);
-    const mix = Math.min(1, virtualIndex - baseIndex);
-    const orders = [];
-
-    cards.forEach((card, index) => {
-      const order = getInterpolatedOrder(index, baseIndex, mix);
-      const y = stackTopInset + order * stackGap;
-      const scale = Math.max(minScale, 1 - order * stackScaleStep);
-      const opacity = Math.max(minOpacity, 1 - order * stackOpacityStep);
-
-      // Alternating rotation: odd cards lean right, even lean left
-      const rotateDir = (index % 2 === 0 ? 1 : -1);
-      const rotate = order === 0 ? 0 : Math.min(order * 1.2, maxRotate) * rotateDir;
-
-      // Alternating horizontal drift
-      const xDir = (index % 2 === 0 ? 1 : -1);
-      const x = order === 0 ? 0 : Math.min(order * 4, maxXOffset) * xDir;
-
-      // Blur increases with distance
-      const blur = order === 0 ? 0 : Math.min(order * 1.2, maxBlur);
-
-      orders[index] = order;
-      setters[index].y(y);
-      setters[index].x(x);
-      setters[index].scale(scale);
-      setters[index].rotate(rotate);
-      setters[index].opacity(opacity);
-
-      // Só aplica blur quando o step inteiro muda — evita recomposição a cada frame
-      const roundedOrder = Math.round(order);
-      if (roundedOrder !== previousRoundedOrders[index]) {
-        previousRoundedOrders[index] = roundedOrder;
-        setters[index].filter(blur);
-      }
-    });
-
-    syncFrontCard(orders);
-  };
-
-  const getStackProgress = (triggerProgress) => {
-    const leadIn = getStackLeadIn();
-    const leadOut = getStackLeadOut();
-    const travel = getStackScrollStep() * maxOrder;
-    const total = leadIn + travel + leadOut;
-    const start = leadIn / total;
-    const end = (leadIn + travel) / total;
-
-    if (triggerProgress <= start) {
-      return 0;
-    }
-
-    if (triggerProgress >= end) {
-      return 1;
-    }
-
-    return (triggerProgress - start) / (end - start);
-  };
-
-  const projectsStackMedia = gsap.matchMedia();
-
-  projectsStackMedia.add('(min-width: 901px)', () => {
-    section.classList.add('projects-stack');
-    syncStackMetrics();
-
-    gsap.set(cards, {
-      xPercent: 0,
-      x: 0,
-      rotate: 0,
-      transformOrigin: '50% 0%',
-      force3D: true
-    });
-
-    // Init stack UI
-    if (stackTotalEl) stackTotalEl.textContent = String(cards.length).padStart(2, '0');
-    if (stackDotsEl) {
-      stackDotsEl.innerHTML = '';
-      cards.forEach((_, i) => {
-        const dot = document.createElement('span');
-        dot.className = 'stack-dot' + (i === 0 ? ' is-active' : '');
-        stackDotsEl.appendChild(dot);
-      });
-    }
-
-    renderStack(0);
-
-    let stackTrigger = null;
-
-    stackTrigger = ScrollTrigger.create({
-      trigger: section,
-      start: () => `top top`,
-      end: () => `+=${getStackTotalDistance()}`,
-      pin: true,
-      pinSpacing: true,
-      scrub: 0.22,
-      invalidateOnRefresh: true,
-      onRefreshInit: syncStackMetrics,
-      onRefresh: () => renderStack(getStackProgress(stackTrigger ? stackTrigger.progress : 0)),
-      onToggle: (self) => {
-        if (self.isActive) {
-          setWillChange(cards, 'transform, opacity');
-          return;
-        }
-
-        clearWillChange(cards);
-      },
-      onUpdate: (self) => renderStack(getStackProgress(self.progress))
-    });
-
-    projectsStackTriggerRef = stackTrigger;
-    ScrollTrigger.refresh();
-
-    return () => {
-      stackTrigger?.kill();
-      projectsStackTriggerRef = null;
-      section.classList.remove('projects-stack');
-      section.style.removeProperty('--projects-stack-stage-height');
-      section.style.removeProperty('--projects-stack-scroll-distance');
-      section.style.removeProperty('--projects-stack-sticky-top');
-      grid.style.removeProperty('height');
-      cards.forEach((card) => {
-        card.classList.remove('is-front');
-        card.removeAttribute('aria-hidden');
-        card.style.removeProperty('z-index');
-      });
-      clearWillChange(cards);
-      gsap.set(cards, { clearProps: 'xPercent,x,y,scale,opacity,rotate,transformOrigin,filter' });
-      cards.forEach((card) => { card.style.filter = ''; });
-    };
-  });
-})();
-
 /* LOADER */
 window.addEventListener('load', () => {
   if (lenis) {
@@ -931,13 +729,19 @@ window.addEventListener('load', () => {
 
   gsap.to(name, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', delay: 0.1 });
 
-  let progress = 0;
-  const interval = setInterval(() => {
-    progress += Math.random() * 15;
-    if (progress >= 100) {
-      progress = 100;
-      clearInterval(interval);
-      setTimeout(() => {
+  const loaderState = { progress: 0 };
+
+  gsap.to(loaderState, {
+    progress: 100,
+    duration: performanceProfile.lowEnd ? 2.2 : 1.85,
+    ease: 'power2.out',
+    onUpdate: () => {
+      const progress = Math.min(100, loaderState.progress);
+      bar.style.transform = `scaleX(${progress / 100})`;
+      counter.textContent = String(Math.floor(progress)).padStart(3, '0');
+    },
+    onComplete: () => {
+      gsap.delayedCall(0.3, () => {
         gsap.to(loader, {
           yPercent: -100,
           duration: 0.9,
@@ -947,16 +751,11 @@ window.addEventListener('load', () => {
             playHeroVideoOnce();
             heroTitleReady = true;
             animateTitleTogether(document.querySelector('.hero-title'));
-            if (typeof initAnimations === 'function') {
-              initAnimations();
-            }
           }
         });
-      }, 300);
+      });
     }
-    bar.style.transform = `scaleX(${progress / 100})`;
-    counter.textContent = String(Math.floor(progress)).padStart(3, '0');
-  }, 60);
+  });
 });
 
 /* ABOUT STAR WARP */
@@ -987,8 +786,8 @@ window.addEventListener('load', () => {
     containerHeight = container.clientHeight;
 
     const count = performanceProfile.lowEnd
-      ? (window.innerWidth < 1280 ? 24 : 36)
-      : (window.innerWidth < 1280 ? 56 : 80);
+      ? (window.innerWidth < 1280 ? 18 : 28)
+      : (window.innerWidth < 1280 ? 40 : 56);
     for (let i = 0; i < count; i += 1) {
       const star = document.createElement('div');
       star.className = 'about-star';
@@ -1073,13 +872,15 @@ window.addEventListener('load', () => {
   }
 
   buildStars();
+  const rebuildStars = throttleWithAnimationFrame(buildStars);
+
   if (typeof ResizeObserver !== 'undefined') {
-    resizeObserver = new ResizeObserver(throttleWithAnimationFrame(buildStars));
+    resizeObserver = new ResizeObserver(rebuildStars);
     resizeObserver.observe(container);
   } else {
-    window.addEventListener('resize', throttleWithAnimationFrame(buildStars), { passive: true });
+    window.addEventListener('resize', rebuildStars, { passive: true });
   }
-  window.addEventListener('scroll', handleScroll, { passive: true });
+  addScrollSubscriber(handleScroll);
 
   const observer = new IntersectionObserver(
     ([entry]) => {

@@ -30,6 +30,9 @@
     window.scrollTo(0, 0);
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+  <link rel="preconnect" href="https://unpkg.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/lenis@1.3.15/dist/lenis.css" />
   <link rel="stylesheet" href="/assets/css/style.css" />
@@ -114,7 +117,7 @@
     </div>
     <div class="hero-img-wrapper">
       <div class="hero-img-frame">
-        <img src="/assets/images/person.webp" alt="Eduardo Matsunaga" />
+        <img src="/assets/images/person.webp" alt="Eduardo Matsunaga" loading="eager" decoding="async" fetchpriority="high" />
         <div class="hero-img-badge">Eduardo Matsunaga</div>
       </div>
     </div>
@@ -214,17 +217,9 @@
       <div class="projects-content">
     <p class="section-label">Projetos</p>
     <h1 class="section-title">Meus Projetos</h1>
-    <div class="stack-ui" aria-hidden="true">
-      <div class="stack-counter">
-        <span class="stack-current">01</span>
-        <span class="stack-sep">/</span>
-        <span class="stack-total"></span>
-      </div>
-      <div class="stack-dots"></div>
-    </div>
     <div class="projects-grid">
       <div class="project-card reveal">
-        <div class="project-img"><img src="/assets/images/blog-post-2.webp" alt="4Monkeys" loading="lazy"/></div>
+        <div class="project-img"><img src="/assets/images/blog-post-2.webp" alt="4Monkeys" loading="lazy" decoding="async"/></div>
         <div class="project-body">
           <p class="project-num">01 — TCC</p>
           <h3 class="project-title">4Monkeys — Sistema de Busca de Desktop</h3>
@@ -233,7 +228,7 @@
         </div>
       </div>
       <div class="project-card reveal">
-        <div class="project-img"><img src="/assets/images/blog-post-4.webp" alt="Treino Portfolio" loading="lazy"/></div>
+        <div class="project-img"><img src="/assets/images/blog-post-4.webp" alt="Treino Portfolio" loading="lazy" decoding="async"/></div>
         <div class="project-body">
           <p class="project-num">02 — Frontend</p>
           <h3 class="project-title">Portfolio</h3>
@@ -242,7 +237,7 @@
         </div>
       </div>
       <div class="project-card reveal">
-        <div class="project-img"><img src="/assets/images/blog-post-5.webp" alt="CRUD PHP" loading="lazy"/></div>
+        <div class="project-img"><img src="/assets/images/blog-post-5.webp" alt="CRUD PHP" loading="lazy" decoding="async"/></div>
         <div class="project-body">
           <p class="project-num">03 — Backend</p>
           <h3 class="project-title">NodeJS e MongoDB</h3>
@@ -251,7 +246,7 @@
         </div>
       </div>
       <div class="project-card reveal">
-        <div class="project-img"><img src="/assets/images/blog-post-1.webp" alt="1º Website" loading="lazy"/></div>
+        <div class="project-img"><img src="/assets/images/blog-post-1.webp" alt="1º Website" loading="lazy" decoding="async"/></div>
         <div class="project-body">
           <p class="project-num">04 — Laravel</p>
           <h3 class="project-title">Sistema de Eventos</h3>
@@ -260,7 +255,7 @@
         </div>
       </div>
       <div class="project-card reveal">
-        <div class="project-img"><img src="/assets/images/blog-post-7.webp" alt="EHE Notes" loading="lazy"/></div>
+        <div class="project-img"><img src="/assets/images/blog-post-7.webp" alt="EHE Notes" loading="lazy" decoding="async"/></div>
         <div class="project-body">
           <p class="project-num">05 — Cybersec</p>
           <h3 class="project-title">EHE — Anotações dos 12 Módulos</h3>
@@ -269,7 +264,7 @@
         </div>
       </div>
       <div class="project-card reveal">
-        <div class="project-img"><img src="/assets/images/blog-post-8.webp" alt="CTF PickleRick" loading="lazy"/></div>
+        <div class="project-img"><img src="/assets/images/blog-post-8.webp" alt="CTF PickleRick" loading="lazy" decoding="async"/></div>
         <div class="project-body">
           <p class="project-num">06 — CTF</p>
           <h3 class="project-title">CTF — PickleRick & SimpleCTF</h3>
@@ -324,9 +319,9 @@
     <p style="font-size:0.8rem; letter-spacing:.1em;">Curitiba, PR</p>
   </footer>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script src="https://unpkg.com/lenis@1.3.15/dist/lenis.min.js"></script>
-  <script src="/assets/js/main.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script defer src="https://unpkg.com/lenis@1.3.15/dist/lenis.min.js"></script>
+  <script defer src="/assets/js/main.js"></script>
 </body>
 </html>
