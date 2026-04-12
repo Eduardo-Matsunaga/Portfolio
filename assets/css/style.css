@@ -752,9 +752,9 @@ footer p { font-family: var(--font-mono); font-size: 1rem; color: var(--white); 
     inset: 0;
   }
   .hero-video {
-    object-fit: contain;
-    object-position: center center;
-    transform: none;
+    object-fit: cover;
+    object-position: 60% center;
+    transform: scale(1.015) translateZ(0);
   }
 }
 
