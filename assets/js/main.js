@@ -762,7 +762,7 @@ window.addEventListener('load', () => {
 (() => {
   const container = document.getElementById('about-star-container');
   const section = document.getElementById('about');
-  if (!container || !section) {
+  if (!container || !section || performanceProfile.reducedMotion) {
     return;
   }
 
@@ -779,22 +779,37 @@ window.addEventListener('load', () => {
     star.el.style.opacity = opacity;
   }
 
+  function getAboutStarConfig() {
+    if (performanceProfile.lowEnd) {
+      return window.innerWidth < 1280
+        ? { count: 8, staticChance: 0.58 }
+        : { count: 12, staticChance: 0.5 };
+    }
+
+    if (window.innerWidth <= 1366) {
+      return window.innerWidth < 1200
+        ? { count: 18, staticChance: 0.46 }
+        : { count: 24, staticChance: 0.4 };
+    }
+
+    return window.innerWidth < 1280
+      ? { count: 34, staticChance: 0.34 }
+      : { count: 46, staticChance: 0.3 };
+  }
+
   function buildStars() {
-    container.innerHTML = '';
     stars.length = 0;
     containerWidth = container.clientWidth;
     containerHeight = container.clientHeight;
-
-    const count = performanceProfile.lowEnd
-      ? (window.innerWidth < 1280 ? 18 : 28)
-      : (window.innerWidth < 1280 ? 40 : 56);
+    const fragment = document.createDocumentFragment();
+    const { count, staticChance } = getAboutStarConfig();
     for (let i = 0; i < count; i += 1) {
       const star = document.createElement('div');
       star.className = 'about-star';
 
       const x = Math.random() * 100;
       const y = Math.random() * 100;
-      const isStatic = Math.random() < 0.3;
+      const isStatic = Math.random() < staticChance;
       const speed = isStatic ? 0 : 0.2 + Math.random() * 0.6;
       const size = isStatic ? 1 + Math.random() : 1 + Math.random() * 2;
       const xPx = (x / 100) * containerWidth;
@@ -807,22 +822,25 @@ window.addEventListener('load', () => {
       // Garante que o transform inicial já está no elemento antes de entrar na GPU layer
       star.style.transform = `translate3d(${xPx}px,${yPx}px,0)`;
 
-      container.appendChild(star);
+      fragment.appendChild(star);
       stars.push({ el: star, initialY: y, speed, x: xPx });
       applyStarVisual({ el: star, x: xPx }, yPx, 0.8);
     }
+
+    container.replaceChildren(fragment);
   }
 
   function updateStars() {
-    if (!active) {
+    if (!active || !containerHeight) {
       return;
     }
 
     const scroll = window.scrollY;
     const velocity = scroll - lastScrollY;
+    const velocityAbs = Math.abs(velocity);
     lastScrollY = scroll;
     const progressBoost = 1 + aboutWarpProgress * 2.4;
-    const travelBoost = Math.max(0, Math.min(Math.abs(velocity) * 0.22 + aboutWarpProgress * 22, 40));
+    const travelBoost = Math.max(0, Math.min(velocityAbs * 0.22 + aboutWarpProgress * 22, 40));
     const driftDirection = velocity === 0 ? -aboutWarpDirection : (velocity >= 0 ? -1 : 1);
 
     stars.forEach((star) => {
@@ -830,7 +848,7 @@ window.addEventListener('load', () => {
         applyStarVisual(
           star,
           star.initialY / 100 * containerHeight,
-          Math.min(1, 0.35 + Math.abs(velocity) * 0.02 + aboutWarpProgress * 0.25)
+          Math.min(1, 0.35 + velocityAbs * 0.02 + aboutWarpProgress * 0.25)
         );
         return;
       }
@@ -843,7 +861,7 @@ window.addEventListener('load', () => {
       applyStarVisual(
         star,
         pos / 100 * containerHeight,
-        Math.min(1, 0.52 + Math.abs(velocity) * 0.05 + star.speed * 0.4 + aboutWarpProgress * 0.18)
+        Math.min(1, 0.52 + velocityAbs * 0.05 + star.speed * 0.4 + aboutWarpProgress * 0.18)
       );
     });
   }

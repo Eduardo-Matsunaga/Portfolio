@@ -422,7 +422,6 @@ nav.scrolled {
   filter: blur(54px);
   opacity: .9;
   transform: translate3d(0, 0, 0);
-  will-change: opacity;
 }
 #about-star-container {
   position: absolute;
@@ -439,7 +438,6 @@ nav.scrolled {
   border-radius: 999px;
   opacity: .8;
   transform: translate3d(var(--star-x), var(--star-y), 0);
-  will-change: transform, opacity;
 }
 .about-star::before {
   content: '';
@@ -450,7 +448,6 @@ nav.scrolled {
   transform-origin: center center;
   animation: about-star-twinkle var(--duration, 3s) infinite ease-in-out;
   animation-play-state: paused;
-  will-change: transform;
 }
 .about-section.about-active .about-star::before {
   animation-play-state: running;
@@ -495,6 +492,8 @@ nav.scrolled {
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   contain: layout paint;
+  content-visibility: auto;
+  contain-intrinsic-size: 320px;
 }
 .edu-card::before,
 .edu-card::after {
@@ -792,6 +791,11 @@ footer p { font-family: var(--font-mono); font-size: 1rem; color: var(--white); 
     padding-top: 5.75rem;
   }
 
+  .about-visual-glow {
+    filter: blur(36px);
+    opacity: .78;
+  }
+
   .edu-grid {
     grid-template-columns: repeat(3, minmax(0, 340px));
     gap: 1.25rem;
@@ -800,6 +804,16 @@ footer p { font-family: var(--font-mono); font-size: 1rem; color: var(--white); 
   .edu-card {
     padding: 1.6rem;
     border-radius: 18px;
+  }
+
+  .edu-card::after {
+    filter: blur(20px);
+    opacity: .38;
+  }
+
+  .edu-card::before,
+  .edu-card::after {
+    animation-duration: 12s;
   }
 
   .edu-name {
@@ -1191,8 +1205,13 @@ html.low-end-device .about-visual-glow {
 }
 
 html.low-end-device .edu-card::after {
-  filter: blur(18px);
-  opacity: .42;
+  filter: blur(14px);
+  opacity: .32;
+}
+
+html.low-end-device .edu-card::before,
+html.low-end-device .edu-card::after {
+  animation-duration: 16s;
 }
 
 html.low-end-device #loader {
