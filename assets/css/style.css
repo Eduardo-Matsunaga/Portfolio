@@ -753,8 +753,100 @@ footer p { font-family: var(--font-mono); font-size: 1rem; color: var(--white); 
   }
   .hero-video {
     object-fit: contain;
-    object-position: center 18%;
-    transform: scale(1.08) translateZ(0);
+    object-position: center center;
+    transform: none;
+  }
+}
+
+@media (max-width: 1366px) and (min-width: 1025px) {
+  nav,
+  .about-section,
+  .skills-section,
+  .projects-section,
+  .contact-section,
+  footer {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+
+  #home {
+    padding: 0 3rem;
+    gap: 2.5rem;
+  }
+
+  .hero-title {
+    font-size: clamp(2.9rem, 4.8vw, 4.8rem);
+  }
+
+  .hero-desc {
+    max-width: 440px;
+    font-size: 1.08rem;
+  }
+
+  .hero-img-frame {
+    width: 330px;
+    height: 420px;
+  }
+
+  .about-section {
+    padding-top: 5.75rem;
+  }
+
+  .edu-grid {
+    grid-template-columns: repeat(3, minmax(0, 340px));
+    gap: 1.25rem;
+  }
+
+  .edu-card {
+    padding: 1.6rem;
+    border-radius: 18px;
+  }
+
+  .edu-name {
+    font-size: 1.14rem;
+    line-height: 1.35;
+  }
+
+  .edu-inst {
+    font-size: .95rem;
+    margin-bottom: .8rem;
+  }
+
+  .edu-desc {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .projects-inner,
+  .projects-grid {
+    max-width: 1080px;
+  }
+
+  .projects-grid {
+    gap: 1.25rem;
+  }
+
+  .project-card {
+    border-radius: 20px;
+  }
+
+  .project-img {
+    aspect-ratio: 16 / 9.2;
+  }
+
+  .project-body {
+    padding: 1.25rem;
+  }
+
+  .project-title {
+    font-size: 1.14rem;
+    line-height: 1.35;
+  }
+
+  .project-desc {
+    font-size: .98rem;
+    line-height: 1.62;
+    margin-bottom: 1.15rem;
   }
 }
 
