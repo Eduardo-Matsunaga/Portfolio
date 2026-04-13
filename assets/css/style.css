@@ -305,7 +305,7 @@ nav.scrolled {
 .hero-img-frame { position: relative; width: 380px; height: 480px; }
 .hero-img-frame::before {
   content: ''; position: absolute; inset: -1px;
-  border: 1px solid #fffb00;
+  border: 1px solid #ffd60a;
   transform: translate3d(12px, 12px, 0); pointer-events: none;
 }
 .hero-tag,
@@ -321,7 +321,7 @@ nav.scrolled {
 }
 .hero-img-badge {
   position: absolute; bottom: -20px; right: -20px;
-  background: #c9bf35; color: #000000;
+  background: #ffd60a; color: #000000;
   font-family: var(--font-mono); font-size: .85rem; font-weight: 700;
   letter-spacing: .12em; text-transform: uppercase; padding: .75rem 1.25rem;
 }
