@@ -288,11 +288,25 @@ document.querySelectorAll('.hero-title, .section-title').forEach((title) => {
   });
   title.dataset.titleState = 'apart';
 
-  if (isSkillsTitle || isContactTitle) {
-    const section = title.closest('#skills, #contact');
+  if (isSkillsTitle) {
+    const section = title.closest('#skills');
     if (section) {
       flowTitleItems.push({ section, title });
     }
+
+    return;
+  }
+
+  if (isContactTitle) {
+    ScrollTrigger.create({
+      trigger: title,
+      start: 'top 92%',
+      end: 'bottom top',
+      invalidateOnRefresh: true,
+      onEnter: () => setTitleState(title, 'together'),
+      onEnterBack: () => setTitleState(title, 'together'),
+      onLeaveBack: () => setTitleState(title, 'apart', 'up')
+    });
 
     return;
   }
